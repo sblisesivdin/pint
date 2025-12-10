@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 '''
-asapsolve.py: Quick Geometric Optimization
+mdsolve.py: Quick Geometric Optimization
               using interatomic potentials.
-More information: $ asapsolve.py -h
+More information: $ mdsolve.py -h
 '''
 
 Description = f''' 
  Usage: 
- $ asapsolve.py <args>
+ $ mdsolve.py <args>
  
  -------------------------------------------------------------
    Some potentials
@@ -222,7 +222,7 @@ class RawFormatter(HelpFormatter):
         return "\n".join([textwrap.fill(line, width) for line in textwrap.indent(textwrap.dedent(text), indent).splitlines()])
 
 # Arguments parsing
-parser = ArgumentParser(prog ='asapsolve.py', description=Description, formatter_class=RawFormatter)
+parser = ArgumentParser(prog ='mdsolve.py', description=Description, formatter_class=RawFormatter)
 
 
 parser.add_argument("-i", "--input", dest = "inputfile", help="Use input file for calculation variables (also you can insert geometry)")
@@ -235,17 +235,17 @@ if args.version:
     import asap3
     import ase
     try:
-        response = requests.get("https://api.github.com/repos/sblisesivdin/gpaw-tools/releases/latest", timeout=5)
+        response = requests.get("https://api.github.com/repos/sblisesivdin/pint/releases/latest", timeout=5)
         print('-------------------------------------------------------------------------------------------------------')
-        print('\033[95mgpaw-tools:\033[0m This is asapsolve.py uses ASAP3 '+asap3.__version__+', and ASE '+ase.__version__)
+        print('\033[95mPint:\033[0m This is mdsolve.py uses ASAP3 '+asap3.__version__+', and ASE '+ase.__version__)
         print('-------------------------------------------------------------------------------------------------------')
         print('The latest STABLE release was '+response.json()["tag_name"]+', which is published at '+response.json()["published_at"])
         print('Download the latest STABLE tarball release at: '+response.json()["tarball_url"])
         print('Download the latest STABLE zipball release at: '+response.json()["zipball_url"])
-        print('Download the latest DEV zipball release at: https://github.com/lrgresearch/gpaw-tools/archive/refs/heads/main.zip')
+        print('Download the latest DEV zipball release at: https://github.com/sblisesivdin/pint/archive/refs/heads/main.zip')
     except (requests.ConnectionError, requests.Timeout):
         print('-------------------------------------------------------------------------------------------------------')
-        print('gpaw-tools: This is asapsolve.py uses ASAP3 '+asap3.__version__+', ASE '+ase.__version__)
+        print('Pint: This is mdsolve.py uses ASAP3 '+asap3.__version__+', ASE '+ase.__version__)
         print('-------------------------------------------------------------------------------------------------------')
         print('No internet connection available.')
     sys.exit(0)

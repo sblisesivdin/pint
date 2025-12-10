@@ -1,8 +1,8 @@
 # Example: GW Aproximation calculation for MoS2
 
-To run the calculation, do not usi mpirun and use `gpawsolve.py` as
+To run the calculation, do not usi mpirun and use `dftsolve.py` as
 
-    gpawsolve.py -i MoS2-GW.py -g MoS2-structure.cif
+    dftsolve.py -i MoS2-GW.py -g MoS2-structure.cif
 
 After first run, you can by pass ground state calculation with changing the line `Ground_calc` as:
 

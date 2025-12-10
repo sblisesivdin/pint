@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 '''
-gpawsolve.py: High-level Interaction Script for GPAW
-More information: $ gpawsolve.py -h
+dftsolve.py: High-level Interaction Script for GPAW
+More information: $ dftsolve.py -h
 '''
 
 Description = f'''
  Usage:
- $ mpirun -np <corenumbers> gpawsolve.py <args>
+ $ mpirun -np <corenumbers> dftolve.py <args>
  -------------------------------------------------------------
  Calculation selector
  -------------------------------------------------------------
@@ -122,9 +122,9 @@ def autoscale_y(ax,margin=0.1):
 
     ax.set_ylim(bot,top)
 
-class gpawsolve:
+class dftsolve:
     """
-    The gpawsolve class is a high-level interaction script for GPAW calculations.
+    The dftsolve class is a high-level interaction script for GPAW calculations.
     It handles various types of calculations such as ground state, structure optimization,
     elastic properties, density of states, band structure, density, and optical properties.
     The class takes input parameters from a configuration file and performs the calculations
@@ -2069,9 +2069,9 @@ if __name__ == "__main__":
             import ase
             import phonopy
             try:
-                response = requests.get("https://api.github.com/repos/sblisesivdin/gpaw-tools/releases/latest", timeout=5)
+                response = requests.get("https://api.github.com/repos/sblisesivdin/pint/releases/latest", timeout=5)
                 parprint('-----------------------------------------------------------------------------')
-                parprint('\033[95mgpaw-tools:\033[0m Version information: '+str(__version__))
+                parprint('\033[95mpint:\033[0m Version information: '+str(__version__))
                 parprint('  uses GPAW '+gpaw.__version__+', ASE '+ase.__version__+' and PHONOPY '+phonopy.__version__)
                 parprint('-----------------------------------------------------------------------------')
                 parprint('The latest STABLE release is '+response.json()["tag_name"]+',')
@@ -2080,10 +2080,10 @@ if __name__ == "__main__":
                 parprint('You can download the latest STABLE tarball, zipball or DEVELOPMENT zipball:')
                 parprint(response.json()["tarball_url"])
                 parprint(response.json()["zipball_url"])
-                parprint('https://github.com/sblisesivdin/gpaw-tools/archive/refs/heads/main.zip')
+                parprint('https://github.com/sblisesivdin/pint/archive/refs/heads/main.zip')
             except (requests.ConnectionError, requests.Timeout) as exception:
                 parprint('-----------------------------------------------------------------------------')
-                parprint('\033[95mgpaw-tools:\033[0m Version information: '+str(__version__))
+                parprint('\033[95mpint:\033[0m Version information: '+str(__version__))
                 parprint('  uses GPAW '+gpaw.__version__+', ASE '+ase.__version__+' and PHONOPY '+phonopy.__version__)
                 parprint('-----------------------------------------------------------------------------')
                 parprint('No internet connection available.')
@@ -2109,7 +2109,7 @@ if __name__ == "__main__":
                 energymeas = True
                 # Start energy consumption calculation.
                 pyRAPL.setup()
-                meter = pyRAPL.Measurement('gpawsolve')
+                meter = pyRAPL.Measurement('dftsolve')
                 meter.begin()
             except:
                 parprint("\033[91mERROR:\033[0m Unexpected error while using -e argument.")
@@ -2132,41 +2132,41 @@ if __name__ == "__main__":
 
     # Write timings of calculation
     with paropen(struct+'-7-Result-Log-Timings.txt', 'a') as f1:
-        print("gpawsolve.py execution timings (seconds):", end="\n", file=f1)
+        print("dftsolve.py execution timings (seconds):", end="\n", file=f1)
         print("Execution started:", time0, end="\n", file=f1)
 
-    # Load gpawsolve() class
-    gpawsolver = gpawsolve(struct)
+    # Load dftsolve() class
+    dftsolver = dftsolve(struct)
 
     # Run structure calculation
-    gpawsolver.structurecalc()
+    dftsolver.structurecalc()
 
     if Optical_calc == False:
         # Run ground state calculation
-        gpawsolver.groundcalc()
+        dftsolver.groundcalc()
 
         if Elastic_calc == True:
             # Run elastic calculation
-            gpawsolver.elasticcalc(drawfigs = drawfigs)
+            dftsolver.elasticcalc(drawfigs = drawfigs)
 
         if DOS_calc == True:
             # Run DOS calculation
-            gpawsolver.doscalc(drawfigs = drawfigs)
+            dftsolver.doscalc(drawfigs = drawfigs)
 
         if Band_calc == True:
             # Run band calculation
-            gpawsolver.bandcalc(drawfigs = drawfigs)
+            dftsolver.bandcalc(drawfigs = drawfigs)
 
         if Density_calc == True:
             # Run all-electron density calculation
-            gpawsolver.densitycalc()    
+            dftsolver.densitycalc()    
 
         if Phonon_calc == True:
             # Run phonon calculation
-            gpawsolver.phononcalc()  
+            dftsolver.phononcalc()  
     else:
         # Run optical calculation
-        gpawsolver.opticalcalc()
+        dftsolver.opticalcalc()
 
     # Ending of timings
     with paropen(struct+'-7-Result-Log-Timings.txt', 'a') as f1:

@@ -1,16 +1,14 @@
 # Example: Electronic Properties of Bulk GaAs
 
-**Note:** You can not use this example with `gg.py`. It is only working with CIF files.
-
 Ground, DOS and Band calculations of Bulk GaAs. PW with 300 eV cutoff, 2.5 kpoint per Angstrom k-point density. The important thing is that the positions are given with Atom object. To run the calculation with MPI on 4 cores please execute the following command in this folder.
 
-    mpirun -np 4 gpawsolve.py -i bulk_gaas.py
+    mpirun -np 4 dftsolve.py -i bulk_gaas.py
 
 or
 
-    gpaw -P4 python ~/path-to-gpawtools/gpawsolve.py -- -i bulk_gaas.py
+    gpaw -P4 python ~/path-to-pint/dftsolve.py -- -i bulk_gaas.py
 
-Here, ~/path-to-gpawtools shows a full path your gpaw-tools folder.
+Here, ~/path-to-pint shows a full path your Pint folder.
 	
 When you use Atoms object inside configuration file, please note that you must add
 

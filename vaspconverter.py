@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Convert a set of VASP input files into gpawsolve-ready inputs.
+"""Convert a set of VASP input files into dftsolve.py-ready inputs.
 
 The script reads VASP style POSCAR/CONTCAR (structure), INCAR (calculation
 parameters) and KPOINTS files and gives:
-  * a CIF geometry file compatible with gpawsolve's ``-g`` option
-  * a Python configuration module that sets the key gpawsolve variables
+  * a CIF geometry file compatible with dftsolve.py's ``-g`` option
+  * a Python configuration module that sets the key dftsolve.py variables
 
 Example
 -------
@@ -43,14 +43,14 @@ class KpointsSettings:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convert VASP input files into gpawsolve inputs.",
+        description="Convert VASP input files into dftsolve.py inputs.",
     )
     parser.add_argument("--poscar", required=True, type=Path, help="Path to POSCAR/CONTCAR file")
     parser.add_argument("--incar", type=Path, help="Path to INCAR file")
     parser.add_argument("--kpoints", type=Path, help="Path to KPOINTS file")
     parser.add_argument("--output-dir", type=Path, default=Path.cwd(), help="Directory to place generated files")
     parser.add_argument("--system-name", help="System name used for file stems and Outdirname")
-    parser.add_argument("--input-filename", help="Optional override for the generated gpawsolve input filename")
+    parser.add_argument("--input-filename", help="Optional override for the generated dftsolve.py input filename")
     parser.add_argument("--outdirname", help="Override for Outdirname inside the generated gpawsolve input")
     parser.add_argument("--xc", help="Fallback XC functional if not specified in INCAR (default: PBE)")
     return parser.parse_args()
@@ -280,7 +280,7 @@ def build_config_lines(
         "MPI_cores = 4",
         "Localisation = 'en_UK'",
         "",
-        f"# Geometry file to use with gpawsolve.py: {geom_filename}",
+        f"# Geometry file to use with dftsolve.py: {geom_filename}",
     ])
 
     return [line.rstrip() for line in lines]
@@ -330,8 +330,8 @@ def main() -> None:
     input_path.write_text("\n".join(config_lines) + "\n")
 
     print(f"Wrote geometry to {geometry_path}")
-    print(f"Wrote gpawsolve input to {input_path}")
-    print(f"Run: gpawsolve.py -i {input_path} -g {geometry_path}")
+    print(f"Wrote dftsolve.py input to {input_path}")
+    print(f"Run: dftsolve.py -i {input_path} -g {geometry_path}")
 
 
 if __name__ == "__main__":  # pragma: no cover

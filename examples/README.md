@@ -2,7 +2,7 @@
 
 There are some example calculations given with different usage scenarios. Please send us more calculations to include here.
 
-## GPAW Example List
+## dftsolve.py Example List
 
 | Name              | Notes  | 
 | ----------------- | ------ |
@@ -16,11 +16,11 @@ There are some example calculations given with different usage scenarios. Please
 | ZnO with DFT+U    | Wurtzite ZnO calculation with DFT+U. Positions are given with Bulk object. Hubbard params are: O-p: 7eV, Zn-d: 10eV|
 | TiC-elastic-electronic | Elastic (EoS and Elastic Tensor) and Electronic Properties of Rocksalt TiC |
 | Si-with-HSE | Ground state, DOS and band structure of Si with HSE06 Hybrid XC |
-| Si-qe       | Example for QE to gpaw-tools conversion with qeconverter.py |
-| Si-vasp       | Example for VASP to gpaw-tools conversion with vaspconverter.py |
+| Si-qe       | Example for QE to Pint conversion with qeconverter.py |
+| Si-vasp       | Example for VASP to Pint conversion with vaspconverter.py |
 
 
-## ASAP3 Example List
+## mdsolve.py Example List
 
 | Name              | Notes  | 
 | ----------------- | ------ |

@@ -4,7 +4,7 @@
 The script reads a pw.x style input file, extracts common calculation
 parameters and lattice/atomic structure, then produces:
   * a CIF geometry file for use with gpawsolve's ``-g`` option.
-  * a Python configuration module defining the gpawsolve variables.
+  * a Python configuration module defining the dftsolve.py variables.
 
 Example
 -------
@@ -41,13 +41,13 @@ class QEInputSettings:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convert Quantum ESPRESSO pw.x input into gpawsolve inputs.",
+        description="Convert Quantum ESPRESSO pw.x input into dftsolve.py inputs.",
     )
     parser.add_argument("--input", required=True, type=Path, help="Path to pw.x input file")
     parser.add_argument("--output-dir", type=Path, default=Path.cwd(), help="Directory for generated files")
     parser.add_argument("--system-name", help="System name used for file stems and Outdirname")
     parser.add_argument("--outdirname", help="Override Outdirname value inside the generated input")
-    parser.add_argument("--input-filename", help="Override gpawsolve input filename")
+    parser.add_argument("--input-filename", help="Override dftsolve.py input filename")
     parser.add_argument("--xc", help="Optional XC functional override (default PBE)")
     return parser.parse_args()
 
@@ -213,7 +213,7 @@ def build_config_lines(
         "MPI_cores = 4",
         "Localisation = 'en_UK'",
         "",
-        f"# Geometry file to use with gpawsolve.py: {geom_filename}",
+        f"# Geometry file to use with dftsolve.py: {geom_filename}",
     ])
 
     return [line.rstrip() for line in lines]
@@ -248,8 +248,8 @@ def main() -> None:
     input_path_out.write_text("\n".join(config_lines) + "\n")
 
     print(f"Wrote geometry to {geometry_path}")
-    print(f"Wrote gpawsolve input to {input_path_out}")
-    print(f"Run: gpawsolve.py -i {input_path_out} -g {geometry_path}")
+    print(f"Wrote dftsolve.py input to {input_path_out}")
+    print(f"Run: dftsolve.py -i {input_path_out} -g {geometry_path}")
 
 
 if __name__ == "__main__":  # pragma: no cover
