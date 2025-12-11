@@ -2,27 +2,47 @@
 """
 mlsolve.py - ML force-field solver
 
-This is an intentionally tiny starter file for the project history.
-It accepts a geometry file path and prints a message. Full features
+The script accepts a geometry file path and prints a message. Full features
 will be added in the future.
 """
 
 import sys
+import argparse
 from pathlib import Path
 
+try:
+    from ase.io import read
+except ImportError:
+    sys.exit("Error: ASE is required. Install with: pip install ase")
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="MLSolve (early version): load a geometry file."
+    )
+    parser.add_argument(
+        "-g", "--geometry",
+        required=True,
+        type=str,
+        help="Path to input geometry file (cif, xyz, poscar, etc.)"
+    )
+    return parser.parse_args()
+
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python mlsolve.py <geometry-file>")
-        sys.exit(1)
+    args = parse_arguments()
+    geom_path = Path(args.geometry)
 
-    geom = Path(sys.argv[1])
-    if not geom.exists():
-        print(f"Error: geometry file '{geom}' not found.")
-        sys.exit(2)
+    if not geom_path.exists():
+        sys.exit(f"Error: geometry file '{geom_path}' not found.")
 
-    print("mlsolve")
-    print(f"Geometry file: {geom}")
-    print("No calculators available in this time.")
+    try:
+        atoms = read(geom_path)
+    except Exception as e:
+        sys.exit(f"Error reading geometry file: {e}")
+
+    print("MLSolve")
+    print(f"Loaded structure: {atoms.get_chemical_formula()}")
+    print(f"Number of atoms: {len(atoms)}")
+    print(f"Cell parameters: {atoms.cell.cellpar().round(3)}")
 
 if __name__ == "__main__":
     main()
