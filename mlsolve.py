@@ -5,6 +5,7 @@ mlsolve.py - ML force-field solver
 The script accepts a geometry file path and parses the args, and prints a message. Full features
 will be added in the future.
 """
+
 import sys
 import argparse
 import ast
@@ -18,7 +19,7 @@ except ImportError:
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="MLSolve: load geometry and parse config."
+        description="MLSolve: load geometry and configuration."
     )
     parser.add_argument(
         "-g", "--geometry",
@@ -48,7 +49,7 @@ def main():
     except Exception as e:
         sys.exit(f"Error reading geometry file: {e}")
 
-    # Parse configuration dictionary
+    # Parse user configuration dictionary
     user_config = {}
     if args.input:
         try:
@@ -58,18 +59,27 @@ def main():
         except Exception:
             sys.exit("Error: -i must be a valid Python dictionary string.")
 
+    # Default configuration for early development
+    config = {
+        "model": "mace",
+        "task": "static",
+        "device": "cpu"
+    }
+
+    # Merge user config (user overrides defaults)
+    config.update(user_config)
+
     print("MLSolve")
     print(f"Loaded structure : {atoms.get_chemical_formula()}")
     print(f"Number of atoms  : {len(atoms)}")
     print(f"Cell parameters  : {atoms.cell.cellpar().round(3)}")
 
-    if user_config:
-        print("\nUser configuration:")
-        for k, v in user_config.items():
-            print(f"  {k}: {v}")
-    else:
-        print("\nNo user configuration provided.")
+    print("\nFinal configuration:")
+    for k, v in config.items():
+        print(f"  {k}: {v}")
 
 
 if __name__ == "__main__":
+    main()
+
     main()
