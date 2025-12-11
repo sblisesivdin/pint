@@ -6,7 +6,7 @@ layout: default
 
 
 
-**[Pint](http://sblisesivdin.github.io/pint)** is a powerful and user-friendly UI/GUI tool for conducting Density Functional Theory (DFT) and molecular dynamics (MD) calculations. In the near future, machine learning features will be added.
+**[Pint](http://sblisesivdin.github.io/pint)** is a powerful and user-friendly user interface (UI) tool for conducting Density Functional Theory (DFT) and molecular dynamics (MD) calculations. In the near future, machine learning features will be added.
 
 `gpaw-tools` is transitioning to `Pint`.
 
