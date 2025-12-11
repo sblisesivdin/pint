@@ -10,7 +10,7 @@ layout: default
 
 `gpaw-tools` is transitioning to `Pint`.
 
-When it first started, `gpaw-tools` was based on GPAW, but today it uses many Python libraries, including ASE, Elastic, Phonopy, ASAP3, OpenKIM, and others. In the near future, it will be enriched with many Python libraries such as SevenNet, CHGNet, and MACE-torch. At this point, we have embarked on a new naming convention to better define the software. After this stage, it will be called `Pint`, which stands for Pythonic Interface for Nanoscale Tasks. The `gpaw-tools` project has moved to its new home to achieve a more comprehensive, modern, and ML-supported structure.
+When it first started, `gpaw-tools` was based on GPAW, but today it uses many Python libraries, including ASE, Elastic, Phonopy, ASAP3, OpenKIM, and others. In the near future, it will be enriched with many Python libraries such as SevenNet, CHGNet, and MACE-torch. At this point, we have embarked on a new naming convention to better define the software. After this stage, it will be called `Pint`, which stands for Pythonic Interface for Nanoscale Tasks. The `gpaw-tools` project has moved to [Pint's new home](https://github.com/sblisesivdin/pint) to achieve a more comprehensive, modern, and ML-supported structure.
 
 What does this mean for you?
 
