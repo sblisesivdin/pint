@@ -1,0 +1,15 @@
+# Site settings
+title: Pythonic Interface for Nanoscale Tasks
+tag_text: Pint
+description: Pint is a powerful and user-friendly UI/GUI tool for conducting Density Functional Theory (DFT) and molecular dynamics (MD) calculations.
+baseurl: "/pint" # the subpath of your site, e.g. /blog
+url: "https://sblisesivdin.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+
+plugins:
+  - jekyll-seo-tag
+
+# Build settings
+markdown: kramdown
+exclude: ["README.md"]
+sass:
+  style: compressed
