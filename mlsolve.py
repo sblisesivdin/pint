@@ -23,24 +23,46 @@ except ImportError:
 
 def get_ml_calculator(model_type, device="cpu", **kwargs):
     """
-    Initializes an ML calculator (MACE only)
+    Initializes an ML calculator.
+    Now supports:
+      - MACE (basic)
+      - CHGNet (basic)
     """
     model_type = model_type.lower()
 
     print(f"\n[Calculators] Requested model: {model_type}, device: {device}")
 
+    # ----------------------
+    # MACE Support
+    # ----------------------
     if model_type == "mace":
         try:
             from mace.calculators import mace_mp
         except ImportError:
             sys.exit("Error: MACE is not installed. Install with: pip install mace-torch")
 
-        print("  Loading basic MACE model (default).")
-        # minimal working configuration
+        print("  Loading basic MACE model.")
         return mace_mp(model="medium", device=device)
 
-    elif model_type in ("chgnet", "sevennet"):
-        print("  Model recognized but not yet implemented.")
+    # ----------------------
+    # CHGNet Support
+    # ----------------------
+    elif model_type == "chgnet":
+        try:
+            from chgnet.model import CHGNet
+            from chgnet.model.model import CHGNetCalculator
+        except ImportError:
+            sys.exit("Error: CHGNet is not installed. Install with: pip install chgnet")
+
+        print("  Loading CHGNet model.")
+        model = CHGNet.load()
+        return CHGNetCalculator(model=model, use_device=device)
+
+    # ----------------------
+    # SevenNet Placeholder
+    # ----------------------
+    elif model_type == "sevennet":
+        print("  SevenNet not implemented yet.")
         return None
 
     else:
@@ -61,7 +83,6 @@ def run_static(atoms, config):
         print("No ML calculator available. Static calculation not performed.")
         return
 
-    # Perform a real calculation now
     try:
         pe = atoms.get_potential_energy()
         forces = atoms.get_forces()
@@ -84,7 +105,7 @@ def run_optimize(atoms, config):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="MLSolve with basic MACE support."
+        description="MLSolve with MACE + CHGNet integration."
     )
     parser.add_argument(
         "-g", "--geometry",
@@ -109,7 +130,6 @@ def main():
     args = parse_arguments()
     geom_path = Path(args.geometry)
 
-    # Geometry loading
     if not geom_path.exists():
         sys.exit(f"Error: geometry file '{geom_path}' not found.")
 
@@ -128,7 +148,6 @@ def main():
         except Exception:
             sys.exit("Error: -i must be a valid Python dictionary string.")
 
-    # Evolving default config
     config = {
         "model": "mace",
         "task": "static",
@@ -145,7 +164,6 @@ def main():
     for k, v in config.items():
         print(f"  {k}: {v}")
 
-    # Task dispatcher
     task = config.get("task", "static").lower()
 
     if task == "static":
@@ -153,9 +171,10 @@ def main():
     elif task == "optimize":
         run_optimize(atoms, config)
     else:
-        print(f"\nError: unknown task '{task}'.")
+        print(f"\nError: unknown task '{task}'. Supported: static, optimize.")
         sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+
