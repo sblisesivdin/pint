@@ -19,7 +19,7 @@ except ImportError:
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="MLSolve: load geometry and configuration."
+        description="MLSolve: geometry + task scaffolding."
     )
     parser.add_argument(
         "-g", "--geometry",
@@ -31,9 +31,23 @@ def parse_arguments():
         "-i", "--input",
         required=False,
         type=str,
-        help="Configuration dictionary as a string, e.g. \"{'model': 'mace'}\""
+        help="Configuration dictionary as a string, e.g. \"{'task': 'static'}\""
     )
     return parser.parse_args()
+
+
+def run_static(atoms, config):
+    """Placeholder for the future static calculation."""
+    print("\n--- Running static calculation (placeholder) ---")
+    print("No ML calculator attached yet.")
+    print("This will compute energy & forces.")
+
+
+def run_optimize(atoms, config):
+    """Placeholder for the future geometry optimization."""
+    print("\n--- Running geometry optimization (placeholder) ---")
+    print("No optimizer or ML calculator yet.")
+    print("This will perform relaxation.")
 
 
 def main():
@@ -59,14 +73,14 @@ def main():
         except Exception:
             sys.exit("Error: -i must be a valid Python dictionary string.")
 
-    # Default configuration for early development
+    # Default configuration grows slowly as we evolve
     config = {
         "model": "mace",
         "task": "static",
         "device": "cpu"
     }
 
-    # Merge user config (user overrides defaults)
+    # Merge user config
     config.update(user_config)
 
     print("MLSolve")
@@ -78,8 +92,18 @@ def main():
     for k, v in config.items():
         print(f"  {k}: {v}")
 
+    # --- Task dispatching ---
+    task = config.get("task", "static").lower()
+
+    if task == "static":
+        run_static(atoms, config)
+    elif task == "optimize":
+        run_optimize(atoms, config)
+    else:
+        print(f"\nError: unknown task '{task}'.")
+        print("Supported tasks: static, optimize")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
-    main()
-
     main()
