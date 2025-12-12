@@ -6,3 +6,4 @@
 - Removed gg.py and gui_files/ directory.
 - Renaming project and its files as: gpaw-tools -> Pint, gpawsolve.py -> dftsolve.py, and asapsolve -> mdsolve.py
 - Replace the gpaw-tools setup with the Pint setup
+- Implement an ML solver script: mlsolve.py
