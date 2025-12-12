@@ -23,19 +23,29 @@ except ImportError:
 
 def get_ml_calculator(model_type, device="cpu", **kwargs):
     """
-    Future ML calculators.
-    Does not load actual models yet.
+    Initializes an ML calculator (MACE only)
     """
     model_type = model_type.lower()
 
-    print(f"\n[Calculator Factory] Requested model: {model_type}, device: {device}")
+    print(f"\n[Calculators] Requested model: {model_type}, device: {device}")
 
-    if model_type not in ("mace", "chgnet", "sevennet"):
-        print("  Unknown model type. Returning None.")
+    if model_type == "mace":
+        try:
+            from mace.calculators import mace_mp
+        except ImportError:
+            sys.exit("Error: MACE is not installed. Install with: pip install mace-torch")
+
+        print("  Loading basic MACE model (default).")
+        # minimal working configuration
+        return mace_mp(model="medium", device=device)
+
+    elif model_type in ("chgnet", "sevennet"):
+        print("  Model recognized but not yet implemented.")
         return None
 
-    print("  ML calculator support not implemented yet.")
-    return None
+    else:
+        print("  Unknown model type. Returning None.")
+        return None
 
 
 # ---------------------------------------------------------
@@ -45,23 +55,27 @@ def get_ml_calculator(model_type, device="cpu", **kwargs):
 def run_static(atoms, config):
     print("\n--- Running static calculation ---")
     calc = get_ml_calculator(config["model"], config["device"], **config)
+    atoms.calc = calc
 
     if calc is None:
-        print("No ML calculator available.")
-        print("Static calculation will be implemented in later commits.")
-    else:
-        print("Calculator attached (future behavior).")
+        print("No ML calculator available. Static calculation not performed.")
+        return
+
+    # Perform a real calculation now
+    try:
+        pe = atoms.get_potential_energy()
+        forces = atoms.get_forces()
+        print(f"Potential energy: {pe:.6f} eV")
+        print(f"Max force: {forces.max():.6f} eV/Å")
+    except Exception as e:
+        print(f"Calculation error: {e}")
 
 
 def run_optimize(atoms, config):
     print("\n--- Running geometry optimization ---")
+    print("Optimization not yet implemented.")
     calc = get_ml_calculator(config["model"], config["device"], **config)
-
-    if calc is None:
-        print("No ML calculator available.")
-        print("Relaxation will be implemented in later commits.")
-    else:
-        print("Calculator attached (future behavior).")
+    atoms.calc = calc
 
 
 # ---------------------------------------------------------
@@ -70,19 +84,19 @@ def run_optimize(atoms, config):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="MLSolve: geometry + configuration + calculator"
+        description="MLSolve with basic MACE support."
     )
     parser.add_argument(
         "-g", "--geometry",
         required=True,
         type=str,
-        help="Path to input geometry file (cif, xyz, poscar, etc.)"
+        help="Path to input geometry file"
     )
     parser.add_argument(
         "-i", "--input",
         required=False,
         type=str,
-        help="Configuration dictionary as a string, e.g. \"{'model': 'mace'}\""
+        help="Configuration dictionary as a string"
     )
     return parser.parse_args()
 
@@ -104,7 +118,7 @@ def main():
     except Exception as e:
         sys.exit(f"Error reading geometry file: {e}")
 
-    # Parse -i config
+    # Parse config
     user_config = {}
     if args.input:
         try:
@@ -114,13 +128,12 @@ def main():
         except Exception:
             sys.exit("Error: -i must be a valid Python dictionary string.")
 
-    # Default config continues to evolve
+    # Evolving default config
     config = {
         "model": "mace",
         "task": "static",
-        "device": "cpu"
+        "device": "cpu",
     }
-
     config.update(user_config)
 
     print("MLSolve")
@@ -140,7 +153,7 @@ def main():
     elif task == "optimize":
         run_optimize(atoms, config)
     else:
-        print(f"\nError: unknown task '{task}'. Supported: static, optimize.")
+        print(f"\nError: unknown task '{task}'.")
         sys.exit(1)
 
 
