@@ -32,8 +32,6 @@ from ase.io.cif import write_cif
 from pathlib import Path
 from gpaw.response.df import DielectricFunction
 from gpaw.response.bse import BSE
-from gpaw.response.g0w0 import G0W0
-from gpaw.response.gw_bands import GWBands
 from gpaw.dos import DOSCalculator
 from gpaw.utilities.dos import raw_orbital_LDOS
 import numpy as np
@@ -172,16 +170,6 @@ class dftsolve:
         self.Phonon_path = Phonon_path
         self.Phonon_npoints = Phonon_npoints
         self.Phonon_acoustic_sum_rule = Phonon_acoustic_sum_rule
-        self.GW_calc_type = GW_calc_type
-        self.GW_kpoints_list = GW_kpoints_list
-        self.GW_truncation = GW_truncation
-        self.GW_cut_off_energy = GW_cut_off_energy
-        self.GW_valence_band_no = GW_valence_band_no
-        self.GW_conduction_band_no = GW_conduction_band_no
-        self.GW_PPA = GW_PPA
-        self.GW_q0_correction = GW_q0_correction
-        self.GW_nblocks_max = GW_nblocks_max
-        self.GW_interpolate_band = GW_interpolate_band
         self.Opt_calc_type = Opt_calc_type
         self.Opt_shift_en = Opt_shift_en
         self.Opt_BSE_valence = Opt_BSE_valence
@@ -326,68 +314,6 @@ class dftsolve:
                 if not os.path.exists(struct+'-1-Result-Ground.gpw'):
                     parprint('\033[91mERROR:\033[0m'+struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
                     quit()
-
-        elif Mode == 'PW-GW':
-            if Ground_calc == True:
-                # PW Ground State Calculations
-                parprint("Starting PW only ground state calculation for GW calculation...")
-                # Fix the spacegroup in the geometric optimization if wanted
-                if Fix_symmetry == True:
-                    bulk_configuration.set_constraint(FixSymmetry(bulk_configuration))
-                if 'Ground_kpts_density' in globals() and Ground_kpts_density is not None:
-                    calc = GPAW(mode=PW(Cut_off_energy), xc=XC_calc, parallel={'domain': 1}, kpts={'density': Ground_kpts_density, 'gamma': Gamma},
-                            convergence = Ground_convergence, charge=Total_charge,
-                            mixer=Mixer_type, occupations = Occupation, txt=struct+'-1-Log-Ground.txt')
-                else:
-                    calc = GPAW(mode=PW(Cut_off_energy), xc=XC_calc, parallel={'domain': 1}, kpts={'size':(Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma},
-                            convergence = Ground_convergence, charge=Total_charge,
-                            mixer=Mixer_type, occupations = Occupation, txt=struct+'-1-Log-Ground.txt')
-                bulk_configuration.calc = calc
-                if Hydrostatic_pressure > 0.0:
-                    uf = FrechetCellFilter(bulk_configuration, mask=Relax_cell, hydrostatic_strain=True, scalar_pressure=Hydrostatic_pressure)
-                else:
-                    uf = FrechetCellFilter(bulk_configuration, mask=Relax_cell)
-                # Optimizer Selection
-                if Optimizer == 'FIRE':
-                    from ase.optimize.fire import FIRE
-                    relax = FIRE(uf, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                elif  Optimizer == 'LBFGS':
-                    from ase.optimize.lbfgs import LBFGS
-                    relax = LBFGS(uf, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
-                elif  Optimizer == 'GPMin':
-                    from ase.optimize import GPMin
-                    relax = GPMin(uf, trajectory=struct+'-1-Result-Ground.traj')
-                else:
-                    relax = QuasiNewton(uf, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                relax.run(fmax=Max_F_tolerance)  # Consider tighter fmax!
-                bulk_configuration.get_potential_energy()
-                calc.diagonalize_full_hamiltonian()
-                calc.write(struct+'-1-Result-Ground.gpw', mode="all")
-                # Writes final configuration as CIF file
-                write_cif(struct+'-Final.cif', bulk_configuration)
-                # Print final spacegroup information
-                parprint("Final Spacegroup:",get_spacegroup(bulk_configuration, symprec=1e-2))
-            else:
-                parprint("Passing ground state calculation for GW calculation...")
-                # Control the ground state GPW file
-                if not os.path.exists(struct+'-1-Result-Ground.gpw'):
-                    parprint('\033[91mERROR:\033[0m'+struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
-                    quit()
-
-            # We start by setting up a G0W0 calculator object
-            gw = G0W0(struct+'-1-Result-Ground.gpw', filename=struct+'-1-', bands=(GW_valence_band_no, GW_conduction_band_no),
-                      method=GW_calc_type,truncation=GW_truncation, nblocksmax=GW_nblocks_max,
-                      maxiter=5, q0_correction=GW_q0_correction, charge=Total_charge,
-                      mixing=0.5,savepckl=True,
-                      ecut=GW_cut_off_energy, ppa=GW_PPA)
-            parprint("Starting PW ground state calculation with G0W0 approximation...")
-            gw.calculate()
-            results = pickle.load(open(struct+'-1-_results.pckl', 'rb'))
-            with paropen(struct+'-1-BandGap.txt', "w") as fd:
-                print('Quasi particle (QP) energies in eV. Take CB-VB for the bandgap', file=fd)
-                print('To see other energy contributions, use python -mpickle <picklefile>', file=fd)
-                for x in zip(results['qp']):
-                    print(*x, sep=", ", file=fd)
 
         elif Mode == 'LCAO':
             if Spin_calc == True:
@@ -950,149 +876,127 @@ class dftsolve:
         # Start Band calc
         time31 = time.time()
         parprint("Starting band structure calculation...")
-        if Mode == 'PW-GW':
-            GW = GWBands(calc=struct+'-1-Result-Ground.gpw', fixdensity=True,
-                 gw_file=struct+'-1-_results.pckl',kpoints=GW_kpoints_list)
-
-            # Getting results without spin-orbit
-            results = GW.get_gw_bands(SO=False, interpolate=GW_interpolate_band, vac=True)
-
-            # Extracting data
-            X = results['X']
-            ef = results['ef']
-            xdata = results['x_k']
-            banddata = results['e_kn']
-
-            np.savetxt(struct+'-3-Result-Band.dat', np.c_[xdata,banddata])
-
-            with open(struct+'-3-Result-Band.dat', 'a') as f:
-                print ('Symmetry points: ', X, end="\n", file=f)
-                print ('Fermi Level: ', ef, end="\n", file=f)
+        if XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
+            calc = GPAW(struct+'-1-Result-Ground.gpw', symmetry='off',kpts={'path': Band_path, 'npoints': Band_npoints},
+                      parallel={'band':1, 'kpt':1}, occupations = Occupation,
+                      txt=struct+'-3-Log-Band.txt', convergence=Band_convergence)
+            ef=0.0
 
         else:
-                        
-            if XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
-                calc = GPAW(struct+'-1-Result-Ground.gpw', symmetry='off',kpts={'path': Band_path, 'npoints': Band_npoints},
-                          parallel={'band':1, 'kpt':1}, occupations = Occupation,
-                          txt=struct+'-3-Log-Band.txt', convergence=Band_convergence)
-                ef=0.0
+            calc = GPAW(struct+'-1-Result-Ground.gpw').fixed_density(kpts={'path': Band_path, 'npoints': Band_npoints},
+                      txt=struct+'-3-Log-Band.txt', symmetry='off', occupations = Occupation, convergence=Band_convergence)
+            ef = calc.get_fermi_level()
 
-            else:
-                calc = GPAW(struct+'-1-Result-Ground.gpw').fixed_density(kpts={'path': Band_path, 'npoints': Band_npoints},
-                          txt=struct+'-3-Log-Band.txt', symmetry='off', occupations = Occupation, convergence=Band_convergence)
-                ef = calc.get_fermi_level()
-
-            calc.get_potential_energy()
-            bs = calc.band_structure()
+        calc.get_potential_energy()
+        bs = calc.band_structure()
             
-            Band_num_of_bands = calc.get_number_of_bands()
-            parprint('Num of bands:'+str(Band_num_of_bands))
+        Band_num_of_bands = calc.get_number_of_bands()
+        parprint('Num of bands:'+str(Band_num_of_bands))
 
-            # No need to write an additional gpaw file. Use json file to use with ase band-structure command
-            #calc.write(struct+'-3-Result-Band.gpw')
-            bs.write(struct+'-3-Result-Band.json')
+        # No need to write an additional gpaw file. Use json file to use with ase band-structure command
+        #calc.write(struct+'-3-Result-Band.gpw')
+        bs.write(struct+'-3-Result-Band.json')
 
-            if Spin_calc == True:
-                eps_skn = np.array([[calc.get_eigenvalues(k,s)
-                                    for k in range(Band_npoints)]
-                                    for s in range(2)]) - ef
-                parprint(eps_skn.shape)
-                with paropen(struct+'-3-Result-Band-Down.dat', 'w') as f1:
-                    for n1 in range(Band_num_of_bands):
-                        for k1 in range(Band_npoints):
-                            print(k1, eps_skn[0, k1, n1], end="\n", file=f1)
-                        print (end="\n", file=f1)
+        if Spin_calc == True:
+            eps_skn = np.array([[calc.get_eigenvalues(k,s)
+                                for k in range(Band_npoints)]
+                                for s in range(2)]) - ef
+            parprint(eps_skn.shape)
+            with paropen(struct+'-3-Result-Band-Down.dat', 'w') as f1:
+                for n1 in range(Band_num_of_bands):
+                    for k1 in range(Band_npoints):
+                        print(k1, eps_skn[0, k1, n1], end="\n", file=f1)
+                    print (end="\n", file=f1)
 
-                with paropen(struct+'-3-Result-Band-Up.dat', 'w') as f2:
-                    for n2 in range(Band_num_of_bands):
-                        for k2 in range(Band_npoints):
-                            print(k2, eps_skn[1, k2, n2], end="\n", file=f2)
-                        print (end="\n", file=f2)
+            with paropen(struct+'-3-Result-Band-Up.dat', 'w') as f2:
+                for n2 in range(Band_num_of_bands):
+                    for k2 in range(Band_npoints):
+                        print(k2, eps_skn[1, k2, n2], end="\n", file=f2)
+                    print (end="\n", file=f2)
 
-                # Thanks to Andrej Kesely (https://stackoverflow.com/users/10035985/andrej-kesely) for helping the problem of general XYYY writer
-                currentd, all_groupsd = [], []
-                with open(struct+'-3-Result-Band-Down.dat', 'r') as f_in1:
-                    for line in map(str.strip, f_in1):
-                        if line == "" and currentd:
-                            all_groupsd.append(currentd)
-                            currentd = []
-                        else:
-                            currentd.append(line.split(maxsplit=1))
+            # Thanks to Andrej Kesely (https://stackoverflow.com/users/10035985/andrej-kesely) for helping the problem of general XYYY writer
+            currentd, all_groupsd = [], []
+            with open(struct+'-3-Result-Band-Down.dat', 'r') as f_in1:
+                for line in map(str.strip, f_in1):
+                    if line == "" and currentd:
+                        all_groupsd.append(currentd)
+                        currentd = []
+                    else:
+                        currentd.append(line.split(maxsplit=1))
 
-                if currentd:
-                    all_groupsd.append(currentd)
+            if currentd:
+                all_groupsd.append(currentd)
 
-                try:
-                    with paropen(struct+'-3-Result-Band-Down-XYYY.dat', 'w') as f1:
-                        for g in zip(*all_groupsd):
-                            print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f1)
-                except Exception as e:
-                    print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted spin down Band file. Mostly, the file is created without any problem.")
-                    print(e)
-                    pass  # Continue execution after encountering an exception
+            try:
+                with paropen(struct+'-3-Result-Band-Down-XYYY.dat', 'w') as f1:
+                    for g in zip(*all_groupsd):
+                        print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f1)
+            except Exception as e:
+                print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted spin down Band file. Mostly, the file is created without any problem.")
+                print(e)
+                pass  # Continue execution after encountering an exception
 
-                currentu, all_groupsu = [], []
-                with open(struct+'-3-Result-Band-Up.dat', 'r') as f_in2:
-                    for line in map(str.strip, f_in2):
-                        if line == "" and currentu:
-                            all_groupsu.append(currentu)
-                            currentu = []
-                        else:
-                            currentu.append(line.split(maxsplit=1))
+            currentu, all_groupsu = [], []
+            with open(struct+'-3-Result-Band-Up.dat', 'r') as f_in2:
+                for line in map(str.strip, f_in2):
+                    if line == "" and currentu:
+                        all_groupsu.append(currentu)
+                        currentu = []
+                    else:
+                    currentu.append(line.split(maxsplit=1))
 
-                if currentu:
-                    all_groupsu.append(currentu)
-                try:
-                    with paropen(struct+'-3-Result-Band-Up-XYYY.dat', 'w') as f2:
-                        for g in zip(*all_groupsu):
-                            print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f2)
-                except Exception as e:
-                    print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted spin up Band file. Mostly, the file is created without any problem.")
-                    print(e)
-                    pass  # Continue execution after encountering an exception
+            if currentu:
+                all_groupsu.append(currentu)
+            try:
+                with paropen(struct+'-3-Result-Band-Up-XYYY.dat', 'w') as f2:
+                    for g in zip(*all_groupsu):
+                        print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f2)
+            except Exception as e:
+                print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted spin up Band file. Mostly, the file is created without any problem.")
+                print(e)
+                pass  # Continue execution after encountering an exception
 
-            else:
-                eps_skn = np.array([[calc.get_eigenvalues(k,s)
-                                    for k in range(Band_npoints)]
-                                    for s in range(1)]) - ef
-                with paropen(struct+'-3-Result-Band.dat', 'w') as f:
-                    for n in range(Band_num_of_bands):
-                        for k in range(Band_npoints):
-                            print(k, eps_skn[0, k, n], end="\n", file=f)
-                        print (end="\n", file=f)
+        else:
+            eps_skn = np.array([[calc.get_eigenvalues(k,s)
+                                for k in range(Band_npoints)]
+                                for s in range(1)]) - ef
+            with paropen(struct+'-3-Result-Band.dat', 'w') as f:
+                for n in range(Band_num_of_bands):
+                    for k in range(Band_npoints):
+                        print(k, eps_skn[0, k, n], end="\n", file=f)
+                    print (end="\n", file=f)
 
-                # Thanks to Andrej Kesely (https://stackoverflow.com/users/10035985/andrej-kesely) for helping the problem of general XYYY writer
-                current, all_groups = [], []
-                with open(struct+'-3-Result-Band.dat', 'r') as f_in:
-                    for line in map(str.strip, f_in):
-                        if line == "" and current:
-                            all_groups.append(current)
-                            current = []
-                        else:
-                            current.append(line.split(maxsplit=1))
+            # Thanks to Andrej Kesely (https://stackoverflow.com/users/10035985/andrej-kesely) for helping the problem of general XYYY writer
+            current, all_groups = [], []
+            with open(struct+'-3-Result-Band.dat', 'r') as f_in:
+                for line in map(str.strip, f_in):
+                    if line == "" and current:
+                        all_groups.append(current)
+                        current = []
+                    else:
+                        current.append(line.split(maxsplit=1))
 
-                if current:
-                    all_groups.append(current)
-                try:
-                    with paropen(struct+'-3-Result-Band-XYYY.dat', 'w') as f1:
-                        for g in zip(*all_groups):
-                            print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f1)
-                except Exception as e:
-                    print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted Band file. Mostly, the file is created without any problem.")
-                    print(e)
-                    pass  # Continue execution after encountering an exception
+            if current:
+                all_groups.append(current)
+            try:
+                with paropen(struct+'-3-Result-Band-XYYY.dat', 'w') as f1:
+                    for g in zip(*all_groups):
+                        print('{} {} {}'.format(g[0][0], g[0][1], ' '.join(v for _, v in g[1:])), file=f1)
+            except Exception as e:
+                print("\033[93mWARNING:\033[0m A problem occurred during writing XYYY formatted Band file. Mostly, the file is created without any problem.")
+                print(e)
+                pass  # Continue execution after encountering an exception
                 
-                # Projected Band
-                Projected_band = False
-                if Projected_band == True:                
-                    with paropen(struct+'-3-Result-ProjectedBand.dat', 'w') as f3:
-                        for i in range(len(sym_ang_mom_i)):
-                            print('----------------------'+sym_ang_mom_i[i]+'---------------------------', end="\n", file=f3)
-                            for n in range(Band_num_of_bands):
-                                for k in range(Band_npoints):
-                                    print(k, projector_weight_skni[0, k, n, i], end="\n", file=f3)
-                                print (end="\n", file=f3)
-                    
+            # Projected Band
+            Projected_band = False
+            if Projected_band == True:                
+                with paropen(struct+'-3-Result-ProjectedBand.dat', 'w') as f3:
+                    for i in range(len(sym_ang_mom_i)):
+                        print('----------------------'+sym_ang_mom_i[i]+'---------------------------', end="\n", file=f3)
+                        for n in range(Band_num_of_bands):
+                            for k in range(Band_npoints):
+                                print(k, projector_weight_skni[0, k, n, i], end="\n", file=f3)
+                            print (end="\n", file=f3)
                 
         # Finish Band calc
         time32 = time.time()
@@ -1105,30 +1009,12 @@ class dftsolve:
             # Draw graphs only on master node
             if world.rank == 0:
                 # Band Structure
-                if Mode == 'PW-GW':
-                    f = plt.figure()
-                    plt.plot(xdata, banddata, '-b', '-r', linewidth=1)
-                    plt.xticks(X, GW_kpoints_list, fontsize=8)
-                    plt.ylabel('Energy with respect to vacuum (eV)', fontsize=14)
-                    plt.tight_layout()
-                    plt.savefig(struct+'-3-Graph-Band.png', dpi=300)
-                    plt.show()
-                else:
-                    bs.plot(filename=struct+'-3-Graph-Band.png', show=True, emax=Energy_max + bs.reference, emin=Energy_min + bs.reference, ylabel=band_ylabel[Localisation])
+                bs.plot(filename=struct+'-3-Graph-Band.png', show=True, emax=Energy_max + bs.reference, emin=Energy_min + bs.reference, ylabel=band_ylabel[Localisation])
         else:
             # Draw graphs only on master node
             if world.rank == 0:
                 # Band Structure
-                if Mode == 'PW-GW':
-                    f = plt.figure()
-                    plt.plot(xdata, banddata, '-b', '-r', linewidth=1)
-                    plt.xticks(X, GW_kpoints_list, fontsize=8)
-                    plt.ylabel('Energy with respect to vacuum (eV)', fontsize=14)
-                    plt.tight_layout()
-                    plt.savefig(struct+'-3-Graph-Band.png', dpi=300)
-                    #plt.show()
-                else:
-                    bs.plot(filename=struct+'-3-Graph-Band.png', show=False, emax=Energy_max + bs.reference, emin=Energy_min + bs.reference, ylabel=band_ylabel[Localisation])
+                bs.plot(filename=struct+'-3-Graph-Band.png', show=False, emax=Energy_max + bs.reference, emin=Energy_min + bs.reference, ylabel=band_ylabel[Localisation])
 
     def densitycalc(self):
         """
@@ -1840,7 +1726,7 @@ if __name__ == "__main__":
     # These values (with bulk configuration) can be used to run this script without using inputfile (py file)
     # and configuration file (cif file).
     # -------------------------------------------------------------
-    Mode = 'PW'             # Use PW, PW-GW, PW-EXX, LCAO, FD  (PW is more accurate, LCAO is quicker mostly.)
+    Mode = 'PW'             # Use PW, LCAO, FD  (PW is more accurate, LCAO is quicker mostly.)
     # -------------------------------------------------------------
     Ground_calc = False     # Ground state calculations
     Geo_optim = False       # Geometric optimization with LFBGS
@@ -1912,18 +1798,6 @@ if __name__ == "__main__":
     Phonon_path = 'LGL'	    # Brillouin zone high symmetry points
     Phonon_npoints = 61		# Number of points between high symmetry points
     Phonon_acoustic_sum_rule = True
-
-    # GW CALCULATION ----------------------
-    GW_calc_type = 'GW0'          # GW0 or G0W0
-    GW_kpoints_list = np.array([[0.0, 0.0, 0.0], [1 / 3, 1 / 3, 0], [0.0, 0.0, 0.0]]) #Kpoints list
-    GW_truncation = 'None'     # Can be None, '2D', '1D', '0D' or 'wigner-seitz'
-    GW_cut_off_energy = 50   # Cut-off energy
-    GW_valence_band_no = 8            # Valence band number
-    GW_conduction_band_no = 18           # Conduction band number
-    GW_PPA = True            # Plasmon Pole Approximation
-    GW_q0_correction = True   # Analytic correction to the q=0 contribution applicable to 2D systems.
-    GW_nblocks_max = True         # Cuts chi0 into as many blocks to reduce mem. req. as much as possible.
-    GW_interpolate_band = True # Interpolate band
 
     # OPTICAL ----------------------
     Opt_calc_type = 'BSE'         # BSE or RPA
