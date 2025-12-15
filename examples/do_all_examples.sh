@@ -6,7 +6,7 @@ SCRIPT=`realpath $0`
 SCRIPTPATH=`dirname $SCRIPT`
 # Examples
 # Bulk-Al-noCIF -------------------
-echo "Adding: Bulk-GaAs-noCIF"
+echo "Adding: Bulk-GaAs-noCIF."
 cd ./Bulk-GaAs-noCIF
 tsp mpirun -np $CORENUMBER dftsolve.py -i bulk_gaas.py
 
@@ -16,19 +16,19 @@ cd ../Cr2O-spin
 tsp mpirun -np $CORENUMBER dftsolve.py -i Cr2O.py -g Cr2O_mp-1206821_primitive.cif
 
 # Graphene-LCAO -------------
-echo "Adding: Graphene-LCAO"
+echo "Adding: Graphene-LCAO."
 cd ../Graphene-LCAO
-echo "Step 1: Pristine graphene"
+echo "Step 1: Pristine graphene."
 tsp mpirun -np $CORENUMBER dftsolve.py -i graphene.py -g graphene4x4.cif
-echo "Step 2: Graphene with defect"
+echo "Step 2: Graphene with defect."
 tsp mpirun -np $CORENUMBER dftsolve.py -i graphene.py -g graphene4x4withdefect.cif
 
 # Graphene-charged -------------
-echo "Adding: Graphene-charged"
+echo "Adding: Graphene-charged."
 cd ../Graphene-charged
-echo "Step 1: Neutral defected graphene"
+echo "Step 1: Neutral defective graphene."
 tsp mpirun -np $CORENUMBER dftsolve.py -i graphene-neutral.py -g graphene4x4withdefect.cif
-echo "Step 2: Charged defected Graphene"
+echo "Step 2: Charged defective Graphene."
 tsp mpirun -np $CORENUMBER dftsolve.py -i graphene-charged.py -g graphene4x4withdefect.cif
 
 # Not working after GPAW 22.1.0, needs future fix.
@@ -40,30 +40,30 @@ tsp mpirun -np $CORENUMBER dftsolve.py -i graphene-charged.py -g graphene4x4with
 # Si-2atoms-optical ----------------
 echo "adding: Si-2atoms-optical"
 cd ../Si-2atoms-optical
-echo "Step 1: Ground, DOS and Band"
+echo "Step 1: Ground, DOS, and Band."
 tsp mpirun -np $CORENUMBER dftsolve.py -i Si-Step1-ground_dos_band.py -g Si_mp-149_primitive_Example.cif
-echo "Step 2: Optical - RPA"
+echo "Step 2: Optical - RPA."
 tsp dftsolve.py -i Si-Step2-optical-RPA.py -g Si_mp-149_primitive_Example.cif
-echo "Step 3: Optical - BSE"
+echo "Step 3: Optical - BSE."
 tsp dftsolve.py -i Si-Step3-optical-BSE.py -g Si_mp-149_primitive_Example.cif
 
 # Wurtzite ZnO with DFT+U
-echo "Adding: ZnO with DFT+U"
+echo "Adding: ZnO with DFT+U."
 cd ../ZnO-with-Hubbard
-echo "Step 1: Ground, DOS and Band with DFT+U"
+echo "Step 1: Ground, DOS, and Band with DFT+U."
 tsp mpirun -np $CORENUMBER dftsolve.py -i ZnO_withHubbard.py
-echo "Step 2: Ground, DOS and Band without DFT+U"
+echo "Step 2: Ground, DOS, and Band without DFT+U."
 tsp mpirun -np $CORENUMBER dftsolve.py -i ZnO_woHubbard.py
 
 # Rocksalt TiC with Elastic Calculations
-echo "Adding: Rocksalt TiC"
+echo "Adding: Rocksalt TiC."
 cd ../TiC-elastic-electronic
 tsp mpirun -np $CORENUMBER dftsolve.py -i TiC.py -g TiC_mp-631_primitive-Final.cif
 
 # Phonon dispersion of Aluminum
-echo "Adding: Phonon dispersion of bulk Aluminum"
+echo "Adding: Phonon dispersion of bulk Aluminum."
 cd ../Al-phonon
 tsp mpirun -np $CORENUMBER dftsolve.py -i Al-phonon.py -g Al_mp-134_primitive.cif
 
 # Finish
-echo "All calculations except the HSE calculation are added. Due to consuming to much time, please run HSE example seperately."
+echo "All calculations except the HSE calculation are added. Due to consuming too much time, please run the HSE example separately."
