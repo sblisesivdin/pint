@@ -366,10 +366,10 @@ class dftsolve:
         # Step 0 - STRUCTURE
         # -------------------------------------------------------------
 
-        with paropen(struct+'-0-Result-Spacegroup-and-SpecialPoints.txt', "w") as fd:
-            print("Number of atoms imported from CIF file:"+str(bulk_configuration.get_global_number_of_atoms()), file=fd)
-            print("Spacegroup of CIF file:",get_spacegroup(bulk_configuration, symprec=1e-2), file=fd)
-            print("Special Points usable for this spacegroup:",get_special_points(bulk_configuration.get_cell()), file=fd)
+        with paropen(self.struct+'-0-Result-Spacegroup-and-SpecialPoints.txt', "w") as fd:
+            print("Number of atoms imported from CIF file:"+str(self.bulk_configuration.get_global_number_of_atoms()), file=fd)
+            print("Spacegroup of CIF file:",get_spacegroup(self.bulk_configuration, symprec=1e-2), file=fd)
+            print("Special Points usable for this spacegroup:",get_special_points(self.bulk_configuration.get_cell()), file=fd)
 
     def groundcalc(self):
         """
@@ -385,171 +385,171 @@ class dftsolve:
 
         # Start ground state timing
         time11 = time.time()
-        if Mode == 'PW':
-            if Spin_calc == True:
-                if 'Magmom_single_atom' in globals() and Magmom_single_atom is not None:
-                    numm = [0.0]*bulk_configuration.get_global_number_of_atoms()
-                    numm[Magmom_single_atom[0]] = Magmom_single_atom[1]
+        if self.Mode == 'PW':
+            if self.Spin_calc == True:
+                if self.Magmom_single_atom is not None:
+                    numm = [0.0]*self.bulk_configuration.get_global_number_of_atoms()
+                    numm[self.Magmom_single_atom[0]] = self.Magmom_single_atom[1]
                 else:
-                    numm = [Magmom_per_atom]*bulk_configuration.get_global_number_of_atoms()
-                bulk_configuration.set_initial_magnetic_moments(numm)
-            if Ground_calc == True:
+                    numm = [self.Magmom_per_atom]*self.bulk_configuration.get_global_number_of_atoms()
+                self.bulk_configuration.set_initial_magnetic_moments(numm)
+            if self.config.Ground_calc == True:
                 # PW Ground State Calculations
                 parprint("Starting PW ground state calculation...")
-                if True in Relax_cell:
-                    if XC_calc in ['GLLBSC', 'GLLBSCM', 'HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
-                        parprint("\033[91mERROR:\033[0m Structure optimization LBFGS can not be used with "+XC_calc+" xc.")
+                if True in self.Relax_cell:
+                    if self.XC_calc in ['GLLBSC', 'GLLBSCM', 'HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
+                        parprint("\033[91mERROR:\033[0m Structure optimization LBFGS can not be used with "+self.XC_calc+" xc.")
                         parprint("Do manual structure optimization, or do with PBE, then use its final CIF as input.")
                         parprint("Quiting...")
                         quit()
-                if XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
+                if self.XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
                     parprint('Starting Hybrid XC calculations...')
-                    if 'Ground_kpts_density' in globals() and Ground_kpts_density is not None:
-                        calc = GPAW(mode=PW(ecut=Cut_off_energy, force_complex_dtype=True), xc={'name': XC_calc, 'backend': 'pw'}, nbands='200%',
-                                parallel={'band': 1, 'kpt': 1}, eigensolver=Davidson(niter=1), mixer=Mixer_type, charge=Total_charge,
-                                spinpol=Spin_calc, kpts={'density': Ground_kpts_density, 'gamma': Gamma}, txt=struct+'-1-Log-Ground.txt',
-                                convergence = Ground_convergence, occupations = Occupation)
+                    if self.Ground_kpts_density is not None:
+                        calc = GPAW(mode=PW(ecut=self.Cut_off_energy, force_complex_dtype=True), xc={'name': self.XC_calc, 'backend': 'pw'}, nbands='200%',
+                                parallel={'band': 1, 'kpt': 1}, eigensolver=Davidson(niter=1), mixer=self.Mixer_type, charge=self.Total_charge,
+                                spinpol=self.Spin_calc, kpts={'density': self.Ground_kpts_density, 'gamma': self.Gamma}, txt=self.struct+'-1-Log-Ground.txt',
+                                convergence = self.Ground_convergence, occupations = self.Occupation)
                     else:
-                        calc = GPAW(mode=PW(ecut=Cut_off_energy, force_complex_dtype=True), xc={'name': XC_calc, 'backend': 'pw'}, nbands='200%', 
-                                parallel={'band': 1, 'kpt': 1}, eigensolver=Davidson(niter=1), mixer=Mixer_type, charge=Total_charge,
-                                spinpol=Spin_calc, kpts={'size': (Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma}, txt=struct+'-1-Log-Ground.txt',
-                                convergence = Ground_convergence, occupations = Occupation)
+                        calc = GPAW(mode=PW(ecut=self.Cut_off_energy, force_complex_dtype=True), xc={'name': self.XC_calc, 'backend': 'pw'}, nbands='200%', 
+                                parallel={'band': 1, 'kpt': 1}, eigensolver=Davidson(niter=1), mixer=self.Mixer_type, charge=self.Total_charge,
+                                spinpol=self.Spin_calc, kpts={'size': (self.Ground_kpts_x, self.Ground_kpts_y, self.Ground_kpts_z), 'gamma': self.Gamma}, txt=self.struct+'-1-Log-Ground.txt',
+                                convergence = self.Ground_convergence, occupations = self.Occupation)
                 else:
-                    parprint('Starting calculations with '+XC_calc+'...')
+                    parprint('Starting calculations with '+self.XC_calc+'...')
                     # Fix the spacegroup in the geometric optimization if wanted
-                    if Fix_symmetry == True:
-                        bulk_configuration.set_constraint(FixSymmetry(bulk_configuration))
-                    if 'Ground_kpts_density' in globals() and Ground_kpts_density is not None:
-                        calc = GPAW(mode=PW(ecut=Cut_off_energy, force_complex_dtype=True), xc=XC_calc, nbands='200%', setups= Setup_params, 
-                                parallel={'domain': world.size}, spinpol=Spin_calc, kpts={'density': Ground_kpts_density, 'gamma': Gamma},
-                                mixer=Mixer_type, txt=struct+'-1-Log-Ground.txt', charge=Total_charge,
-                                convergence = Ground_convergence, occupations = Occupation)
+                    if self.Fix_symmetry == True:
+                        self.bulk_configuration.set_constraint(FixSymmetry(self.bulk_configuration))
+                    if self.Ground_kpts_density is not None:
+                        calc = GPAW(mode=PW(ecut=self.Cut_off_energy, force_complex_dtype=True), xc=self.XC_calc, nbands='200%', setups= self.Setup_params, 
+                                parallel={'domain': world.size}, spinpol=self.Spin_calc, kpts={'density': self.Ground_kpts_density, 'gamma': self.Gamma},
+                                mixer=self.Mixer_type, txt=self.struct+'-1-Log-Ground.txt', charge=self.Total_charge,
+                                convergence = self.Ground_convergence, occupations = self.Occupation)
                     else:
-                        calc = GPAW(mode=PW(ecut=Cut_off_energy, force_complex_dtype=True), xc=XC_calc, nbands='200%', setups= Setup_params, 
-                                parallel={'domain': world.size}, spinpol=Spin_calc, kpts={'size': (Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma},
-                                mixer=Mixer_type, txt=struct+'-1-Log-Ground.txt', charge=Total_charge,
-                                convergence = Ground_convergence, occupations = Occupation)
-                bulk_configuration.calc = calc
-                if Geo_optim == True:
-                    if True in Relax_cell:
-                        if Hydrostatic_pressure > 0.0:
-                            uf = FrechetCellFilter(bulk_configuration, mask=Relax_cell, hydrostatic_strain=True, scalar_pressure=Hydrostatic_pressure)
+                        calc = GPAW(mode=PW(ecut=self.Cut_off_energy, force_complex_dtype=True), xc=self.XC_calc, nbands='200%', setups= self.Setup_params, 
+                                parallel={'domain': world.size}, spinpol=self.Spin_calc, kpts={'size': (self.Ground_kpts_x, self.Ground_kpts_y, self.Ground_kpts_z), 'gamma': self.Gamma},
+                                mixer=self.Mixer_type, txt=self.struct+'-1-Log-Ground.txt', charge=self.Total_charge,
+                                convergence = self.Ground_convergence, occupations = self.Occupation)
+                self.bulk_configuration.calc = calc
+                if self.Geo_optim == True:
+                    if True in self.Relax_cell:
+                        if self.Hydrostatic_pressure > 0.0:
+                            uf = FrechetCellFilter(self.bulk_configuration, mask=self.Relax_cell, hydrostatic_strain=True, scalar_pressure=self.Hydrostatic_pressure)
                         else:
-                            uf = FrechetCellFilter(bulk_configuration, mask=Relax_cell)
+                            uf = FrechetCellFilter(self.bulk_configuration, mask=self.Relax_cell)
                         # Optimizer Selection
-                        if Optimizer == 'FIRE':
+                        if self.Optimizer == 'FIRE':
                             from ase.optimize.fire import FIRE
-                            relax = FIRE(uf, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                        elif  Optimizer == 'LBFGS':
+                            relax = FIRE(uf, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif  self.Optimizer == 'LBFGS':
                             from ase.optimize.lbfgs import LBFGS
-                            relax = LBFGS(uf, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
-                        elif  Optimizer == 'GPMin':
+                            relax = LBFGS(uf, maxstep=self.Max_step, alpha=self.Alpha, damping=self.Damping, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif  self.Optimizer == 'GPMin':
                             from ase.optimize import GPMin
-                            relax = GPMin(uf, trajectory=struct+'-1-Result-Ground.traj')
+                            relax = GPMin(uf, trajectory=self.struct+'-1-Result-Ground.traj')
                         else:
-                            relax = QuasiNewton(uf, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
+                            relax = QuasiNewton(uf, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
                     else:
                         # Optimizer Selection
-                        if Optimizer == 'FIRE':
+                        if self.Optimizer == 'FIRE':
                             from ase.optimize.fire import FIRE
-                            relax = FIRE(bulk_configuration, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                        elif  Optimizer == 'LBFGS':
+                            relax = FIRE(self.bulk_configuration, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif  self.Optimizer == 'LBFGS':
                             from ase.optimize.lbfgs import LBFGS
-                            relax = LBFGS(bulk_configuration, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
-                        elif  Optimizer == 'GPMin':
+                            relax = LBFGS(self.bulk_configuration, maxstep=self.Max_step, alpha=self.Alpha, damping=self.Damping, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif  self.Optimizer == 'GPMin':
                             from ase.optimize import GPMin
-                            relax = GPMin(bulk_configuration, trajectory=struct+'-1-Result-Ground.traj')
+                            relax = GPMin(self.bulk_configuration, trajectory=self.struct+'-1-Result-Ground.traj')
                         else:
-                            relax = QuasiNewton(bulk_configuration, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                    relax.run(fmax=Max_F_tolerance)  # Consider tighter fmax!
+                            relax = QuasiNewton(self.bulk_configuration, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
+                    relax.run(fmax=self.Max_F_tolerance)  # Consider tighter fmax!
                 else:
-                    bulk_configuration.set_calculator(calc)
-                    bulk_configuration.get_potential_energy()
+                    self.bulk_configuration.set_calculator(calc)
+                    self.bulk_configuration.get_potential_energy()
                 #This line makes huge GPW files. Therefore, it is better to use this if-else
-                calc.write(struct+'-1-Result-Ground.gpw', mode="all")
+                calc.write(self.struct+'-1-Result-Ground.gpw', mode="all")
 
                 # Writes final configuration as CIF file
-                write_cif(struct+'-Final.cif', bulk_configuration)
+                write_cif(self.struct+'-Final.cif', self.bulk_configuration)
             else:
                 parprint("Passing PW ground state calculation...")
                 # Control the ground state GPW file
-                if not os.path.exists(struct+'-1-Result-Ground.gpw'):
-                    parprint('\033[91mERROR:\033[0m'+struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
+                if not os.path.exists(self.struct+'-1-Result-Ground.gpw'):
+                    parprint('\033[91mERROR:\033[0m'+self.struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
                     quit()
 
-        elif Mode == 'LCAO':
-            if Spin_calc == True:
-                if 'Magmom_single_atom' in globals() and Magmom_single_atom is not None:
-                    numm = [0.0]*bulk_configuration.get_global_number_of_atoms()
-                    numm[Magmom_single_atom[0]] = Magmom_single_atom[1]
+        elif self.Mode == 'LCAO':
+            if self.Spin_calc == True:
+                if self.Magmom_single_atom is not None:
+                    numm = [0.0]*self.bulk_configuration.get_global_number_of_atoms()
+                    numm[self.Magmom_single_atom[0]] = self.Magmom_single_atom[1]
                 else:
-                    numm = [Magmom_per_atom]*bulk_configuration.get_global_number_of_atoms()
-                bulk_configuration.set_initial_magnetic_moments(numm)
-            if Ground_calc == True:
+                    numm = [self.Magmom_per_atom]*self.bulk_configuration.get_global_number_of_atoms()
+                self.bulk_configuration.set_initial_magnetic_moments(numm)
+            if self.Ground_calc == True:
                 parprint("Starting LCAO ground state calculation...")
                 # Fix the spacegroup in the geometric optimization if wanted
-                if Fix_symmetry == True:
-                    bulk_configuration.set_constraint(FixSymmetry(bulk_configuration))
-                if 'Ground_gpts_density' in globals() and Ground_gpts_density is not None:
-                    if 'Ground_kpts_density' in globals() and Ground_kpts_density is not None:
-                        calc = GPAW(mode='lcao', basis='dzp', setups= Setup_params, kpts={'density': Ground_kpts_density, 'gamma': Gamma},
-                                convergence = Ground_convergence, h=Ground_gpts_density, spinpol=Spin_calc, txt=struct+'-1-Log-Ground.txt',
-                                mixer=Mixer_type, occupations = Occupation, nbands='200%', parallel={'domain': world.size}, charge=Total_charge)
+                if self.Fix_symmetry == True:
+                    self.bulk_configuration.set_constraint(FixSymmetry(self.bulk_configuration))
+                if self.Ground_gpts_density is not None:
+                    if self.Ground_kpts_density is not None:
+                        calc = GPAW(mode='lcao', basis='dzp', setups= self.Setup_params, kpts={'density': self.Ground_kpts_density, 'gamma': self.Gamma},
+                                convergence = self.Ground_convergence, h=self.Ground_gpts_density, spinpol=self.Spin_calc, txt=self.struct+'-1-Log-Ground.txt',
+                                mixer=self.Mixer_type, occupations = self.Occupation, nbands='200%', parallel={'domain': world.size}, charge=self.Total_charge)
                     else:
-                        calc = GPAW(mode='lcao', basis='dzp', setups= Setup_params, kpts={'size':(Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma},
-                                convergence = Ground_convergence, h=Ground_gpts_density, spinpol=Spin_calc, txt=struct+'-1-Log-Ground.txt',
-                                mixer=Mixer_type, occupations = Occupation, nbands='200%', parallel={'domain': world.size}, charge=Total_charge)
+                        calc = GPAW(mode='lcao', basis='dzp', setups= self.Setup_params, kpts={'size':(self.Ground_kpts_x, self.Ground_kpts_y, self.Ground_kpts_z), 'gamma': self.Gamma},
+                                convergence = self.Ground_convergence, h=self.Ground_gpts_density, spinpol=self.Spin_calc, txt=self.struct+'-1-Log-Ground.txt',
+                                mixer=self.Mixer_type, occupations = self.Occupation, nbands='200%', parallel={'domain': world.size}, charge=self.Total_charge)
                 else:
-                    if 'Ground_kpts_density' in globals() and Ground_kpts_density is not None:
-                        calc = GPAW(mode='lcao', basis='dzp', setups= Setup_params, kpts={'density': Ground_kpts_density, 'gamma': Gamma},
-                                convergence = Ground_convergence, gpts=(Ground_gpts_x, Ground_gpts_y, Ground_gpts_z), spinpol=Spin_calc, txt=struct+'-1-Log-Ground.txt',
-                                mixer=Mixer_type, occupations = Occupation, nbands='200%', parallel={'domain': world.size}, charge=Total_charge)
+                    if self.Ground_kpts_density is not None:
+                        calc = GPAW(mode='lcao', basis='dzp', setups= self.Setup_params, kpts={'density': self.Ground_kpts_density, 'gamma': self.Gamma},
+                                convergence = self.Ground_convergence, gpts=(self.Ground_gpts_x, self.Ground_gpts_y, self.Ground_gpts_z), spinpol=self.Spin_calc, txt=self.struct+'-1-Log-Ground.txt',
+                                mixer=self.Mixer_type, occupations = self.Occupation, nbands='200%', parallel={'domain': world.size}, charge=self.Total_charge)
                     else:
-                        calc = GPAW(mode='lcao', basis='dzp', setups= Setup_params, kpts={'size':(Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma},
-                                convergence = Ground_convergence, gpts=(Ground_gpts_x, Ground_gpts_y, Ground_gpts_z), spinpol=Spin_calc, txt=struct+'-1-Log-Ground.txt',
-                                mixer=Mixer_type, occupations = Occupation, nbands='200%', parallel={'domain': world.size}, charge=Total_charge)
-                bulk_configuration.calc = calc
-                if Geo_optim == True:
-                    if True in Relax_cell:
-                        #uf = FrechetCellFilter(bulk_configuration, mask=Relax_cell)
-                        #relax = LBFGS(uf, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
+                        calc = GPAW(mode='lcao', basis='dzp', setups= self.Setup_params, kpts={'size':(self.Ground_kpts_x, self.Ground_kpts_y, self.Ground_kpts_z), 'gamma': self.Gamma},
+                                convergence = self.Ground_convergence, gpts=(self.Ground_gpts_x, self.Ground_gpts_y, self.Ground_gpts_z), spinpol=self.Spin_calc, txt=self.struct+'-1-Log-Ground.txt',
+                                mixer=self.Mixer_type, occupations = self.Occupation, nbands='200%', parallel={'domain': world.size}, charge=self.Total_charge)
+                self.bulk_configuration.calc = calc
+                if self.Geo_optim == True:
+                    if True in self.Relax_cell:
+                        #uf = FrechetCellFilter(self.bulk_configuration, mask=self.Relax_cell)
+                        #relax = LBFGS(uf, maxstep=self.Max_step, alpha=self.Alpha, damping=self.Damping, trajectory=self.struct+'-1-Result-Ground.traj')
                         parprint('\033[91mERROR:\033[0mModifying supercell and atom positions with a filter (Relax_cell keyword) is not implemented in LCAO mode.')
                         quit()
                     else:
                         # Optimizer Selection
-                        if Optimizer == 'FIRE':
+                        if self.Optimizer == 'FIRE':
                             from ase.optimize.fire import FIRE
-                            relax = FIRE(bulk_configuration, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                        elif Optimizer == 'LBFGS':
+                            relax = FIRE(self.bulk_configuration, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif self.Optimizer == 'LBFGS':
                             from ase.optimize.lbfgs import LBFGS
-                            relax = LBFGS(bulk_configuration, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
-                        elif Optimizer == 'GPMin':
+                            relax = LBFGS(self.bulk_configuration, maxstep=self.Max_step, alpha=self.Alpha, damping=self.Damping, trajectory=self.struct+'-1-Result-Ground.traj')
+                        elif self.Optimizer == 'GPMin':
                             from ase.optimize import GPMin
-                            relax = GPMin(bulk_configuration, trajectory=struct+'-1-Result-Ground.traj')
+                            relax = GPMin(self.bulk_configuration, trajectory=self.struct+'-1-Result-Ground.traj')
                         else:
-                            relax = QuasiNewton(bulk_configuration, maxstep=Max_step, trajectory=struct+'-1-Result-Ground.traj')
-                    relax.run(fmax=Max_F_tolerance)  # Consider tighter fmax!
+                            relax = QuasiNewton(self.bulk_configuration, maxstep=self.Max_step, trajectory=self.struct+'-1-Result-Ground.traj')
+                    relax.run(fmax=self.Max_F_tolerance)  # Consider tighter fmax!
                 else:
-                    bulk_configuration.set_calculator(calc)
-                    bulk_configuration.get_potential_energy()
-                #relax = LBFGS(bulk_configuration, maxstep=Max_step, alpha=Alpha, damping=Damping, trajectory=struct+'-1-Result-Ground.traj')
-                #relax.run(fmax=Max_F_tolerance)  # Consider much tighter fmax!
-                #bulk_configuration.get_potential_energy()
+                    self.bulk_configuration.set_calculator(calc)
+                    self.bulk_configuration.get_potential_energy()
+                #relax = LBFGS(self.bulk_configuration, maxstep=self.Max_step, alpha=self.Alpha, damping=self.Damping, trajectory=self.struct+'-1-Result-Ground.traj')
+                #relax.run(fmax=self.Max_F_tolerance)  # Consider much tighter fmax!
+                #self.bulk_configuration.get_potential_energy()
                 #This line makes huge GPW files. Therefore it is better to use this if else
-                calc.write(struct+'-1-Result-Ground.gpw', mode="all")
+                calc.write(self.struct+'-1-Result-Ground.gpw', mode="all")
 
                 # Writes final configuration as CIF file
-                write_cif(struct+'-Final.cif', bulk_configuration)
+                write_cif(self.struct+'-Final.cif', self.bulk_configuration)
                 # Print final spacegroup information
-                parprint("Final Spacegroup:",get_spacegroup(bulk_configuration, symprec=1e-2))
+                parprint("Final Spacegroup:",get_spacegroup(self.bulk_configuration, symprec=1e-2))
             else:
                 parprint("Passing LCAO ground state calculation...")
                 # Control the ground state GPW file
-                if not os.path.exists(struct+'-1-Result-Ground.gpw'):
-                    parprint('\033[91mERROR:\033[0m'+struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
+                if not os.path.exists(self.struct+'-1-Result-Ground.gpw'):
+                    parprint('\033[91mERROR:\033[0m'+self.struct+'-1-Result-Ground.gpw file can not be found. It is needed in other calculations. Firstly, finish the ground state calculation. You must have \033[95mGround_calc = True\033[0m line in your input file. Quiting.')
                     quit()
 
-        elif Mode == 'FD':
+        elif self.Mode == 'FD':
             parprint("\033[91mERROR:\033[0mFD mode is not implemented in gpaw-tools yet...")
             quit()
         else:
