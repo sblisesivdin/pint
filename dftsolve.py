@@ -743,58 +743,58 @@ class dftsolve:
         # Start DOS calc
         time21 = time.time()
         parprint("Starting DOS calculation...")
-        if XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
+        if self.XC_calc in ['HSE06', 'HSE03','B3LYP', 'PBE0','EXX']:
             parprint('Passing DOS NSCF calculations...')
-            calc = GPAW().read(filename=struct+'-1-Result-Ground.gpw')
+            calc = GPAW().read(filename=self.struct+'-1-Result-Ground.gpw')
             ef=0.0 # Can not find the use get_fermi_level() 
         else:
-            calc = GPAW(struct+'-1-Result-Ground.gpw').fixed_density(txt=struct+'-2-Log-DOS.txt', convergence = DOS_convergence, occupations = Occupation)
+            calc = GPAW(self.struct+'-1-Result-Ground.gpw').fixed_density(txt=self.struct+'-2-Log-DOS.txt', convergence = self.DOS_convergence, occupations = self.Occupation)
             ef = calc.get_fermi_level()
         
-        chem_sym = bulk_configuration.get_chemical_symbols()
+        chem_sym = self.bulk_configuration.get_chemical_symbols()
         
 
-        if Spin_calc == True:
+        if self.Spin_calc == True:
             #Spin down
 
             # RAW PDOS for spin down
             parprint("Calculating and saving Raw PDOS for spin down...")
             if ef==0.0:
-                rawdos = DOSCalculator.from_calculator(filename=struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
+                rawdos = DOSCalculator.from_calculator(filename=self.struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
             else:
-                rawdos = DOSCalculator.from_calculator(filename=struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=False)
-            energies = rawdos.get_energies(npoints=DOS_npoints)
+                rawdos = DOSCalculator.from_calculator(filename=self.struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=False)
+            energies = rawdos.get_energies(npoints=self.DOS_npoints)
             # Weights
-            pdossweightsdown = [0.0] * DOS_npoints
-            pdospweightsdown = [0.0] * DOS_npoints
-            pdospxweightsdown = [0.0] * DOS_npoints
-            pdospyweightsdown = [0.0] * DOS_npoints
-            pdospzweightsdown = [0.0] * DOS_npoints
-            pdosdweightsdown = [0.0] * DOS_npoints
-            pdosdxyweightsdown = [0.0] * DOS_npoints
-            pdosdyzweightsdown = [0.0] * DOS_npoints
-            pdosd3z2_r2weightsdown = [0.0] * DOS_npoints
-            pdosdzxweightsdown = [0.0] * DOS_npoints
-            pdosdx2_y2weightsdown = [0.0] * DOS_npoints
-            pdosfweightsdown = [0.0] * DOS_npoints
-            totaldosweightsdown = [0.0] * DOS_npoints
+            pdossweightsdown = [0.0] * self.DOS_npoints
+            pdospweightsdown = [0.0] * self.DOS_npoints
+            pdospxweightsdown = [0.0] * self.DOS_npoints
+            pdospyweightsdown = [0.0] * self.DOS_npoints
+            pdospzweightsdown = [0.0] * self.DOS_npoints
+            pdosdweightsdown = [0.0] * self.DOS_npoints
+            pdosdxyweightsdown = [0.0] * self.DOS_npoints
+            pdosdyzweightsdown = [0.0] * self.DOS_npoints
+            pdosd3z2_r2weightsdown = [0.0] * self.DOS_npoints
+            pdosdzxweightsdown = [0.0] * self.DOS_npoints
+            pdosdx2_y2weightsdown = [0.0] * self.DOS_npoints
+            pdosfweightsdown = [0.0] * self.DOS_npoints
+            totaldosweightsdown = [0.0] * self.DOS_npoints
             # Writing RawPDOS
-            with paropen(struct+'-2-Result-RawPDOS-EachAtom-Down.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-RawPDOS-EachAtom-Down.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
-                for j in range(0, bulk_configuration.get_global_number_of_atoms()):
+                for j in range(0, self.bulk_configuration.get_global_number_of_atoms()):
                     print("Atom no: "+str(j+1)+", Atom Symbol: "+chem_sym[j]+" --------------------", file=fd)
-                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=0, width=DOS_width)
-                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=0, width=DOS_width)
-                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=0, width=DOS_width)
-                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=0, width=DOS_width)
-                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=0, width=DOS_width)
-                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=0, width=DOS_width)
-                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=0, width=DOS_width)
-                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=0, width=DOS_width)
-                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=0, width=DOS_width)
-                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=0, width=DOS_width)
-                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=0, width=DOS_width)
-                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=0, width=DOS_width)
+                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=0, width=self.DOS_width)
+                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=0, width=self.DOS_width)
+                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=0, width=self.DOS_width)
+                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=0, width=self.DOS_width)
+                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=0, width=self.DOS_width)
+                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=0, width=self.DOS_width)
+                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=0, width=self.DOS_width)
+                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=0, width=self.DOS_width)
+                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=0, width=self.DOS_width)
+                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=0, width=self.DOS_width)
+                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=0, width=self.DOS_width)
+                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=0, width=self.DOS_width)
                     dosspdf = pdoss + pdosp + pdosd + pdosf
                     # Weights
                     pdossweightsdown = pdossweightsdown + pdoss
@@ -815,13 +815,13 @@ class dftsolve:
 
             # Writing DOS
             parprint("Saving DOS for spin down...")
-            with paropen(struct+'-2-Result-DOS-Down.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-DOS-Down.csv', "w") as fd:
                 for x in zip(energies, totaldosweightsdown):
                     print(*x, sep=", ", file=fd)
                     
             # Writing PDOS
             parprint("Saving PDOS for spin down...")
-            with paropen(struct+'-2-Result-PDOS-Down.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-PDOS-Down.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
                 for x in zip(energies, pdossweightsdown, pdospweightsdown, pdospxweightsdown, pdospyweightsdown, pdospzweightsdown, pdosdweightsdown,
                              pdosdxyweightsdown, pdosdyzweightsdown, pdosd3z2_r2weightsdown, pdosdzxweightsdown, pdosdx2_y2weightsdown, pdosfweightsdown, totaldosweightsdown):
@@ -831,40 +831,40 @@ class dftsolve:
 
             # RAW PDOS for spin up
             parprint("Calculating and saving Raw PDOS for spin up...")
-            rawdos = DOSCalculator.from_calculator(struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
-            energies = rawdos.get_energies(npoints=DOS_npoints)
+            rawdos = DOSCalculator.from_calculator(self.struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
+            energies = rawdos.get_energies(npoints=self.DOS_npoints)
             # Weights
-            pdossweightsup = [0.0] * DOS_npoints
-            pdospweightsup = [0.0] * DOS_npoints
-            pdospxweightsup = [0.0] * DOS_npoints
-            pdospyweightsup = [0.0] * DOS_npoints
-            pdospzweightsup = [0.0] * DOS_npoints
-            pdosdweightsup = [0.0] * DOS_npoints
-            pdosdxyweightsup = [0.0] * DOS_npoints
-            pdosdyzweightsup = [0.0] * DOS_npoints
-            pdosd3z2_r2weightsup = [0.0] * DOS_npoints
-            pdosdzxweightsup = [0.0] * DOS_npoints
-            pdosdx2_y2weightsup = [0.0] * DOS_npoints
-            pdosfweightsup = [0.0] * DOS_npoints
-            totaldosweightsup = [0.0] * DOS_npoints
+            pdossweightsup = [0.0] * self.DOS_npoints
+            pdospweightsup = [0.0] * self.DOS_npoints
+            pdospxweightsup = [0.0] * self.DOS_npoints
+            pdospyweightsup = [0.0] * self.DOS_npoints
+            pdospzweightsup = [0.0] * self.DOS_npoints
+            pdosdweightsup = [0.0] * self.DOS_npoints
+            pdosdxyweightsup = [0.0] * self.DOS_npoints
+            pdosdyzweightsup = [0.0] * self.DOS_npoints
+            pdosd3z2_r2weightsup = [0.0] * self.DOS_npoints
+            pdosdzxweightsup = [0.0] * self.DOS_npoints
+            pdosdx2_y2weightsup = [0.0] * self.DOS_npoints
+            pdosfweightsup = [0.0] * self.DOS_npoints
+            totaldosweightsup = [0.0] * self.DOS_npoints
 
             #Writing RawPDOS
-            with paropen(struct+'-2-Result-RawPDOS-EachAtom-Up.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-RawPDOS-EachAtom-Up.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
-                for j in range(0, bulk_configuration.get_global_number_of_atoms()):
+                for j in range(0, self.bulk_configuration.get_global_number_of_atoms()):
                     print("Atom no: "+str(j+1)+", Atom Symbol: "+chem_sym[j]+" --------------------", file=fd)
-                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=1, width=DOS_width)
-                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=1, width=DOS_width)
-                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=1, width=DOS_width)
-                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=1, width=DOS_width)
-                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=1, width=DOS_width)
-                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=1, width=DOS_width)
-                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=1, width=DOS_width)
-                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=1, width=DOS_width)
-                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=1, width=DOS_width)
-                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=1, width=DOS_width)
-                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=1, width=DOS_width)
-                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=1, width=DOS_width)
+                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=1, width=self.DOS_width)
+                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=1, width=self.DOS_width)
+                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=1, width=self.DOS_width)
+                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=1, width=self.DOS_width)
+                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=1, width=self.DOS_width)
+                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=1, width=self.DOS_width)
+                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=1, width=self.DOS_width)
+                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=1, width=self.DOS_width)
+                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=1, width=self.DOS_width)
+                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=1, width=self.DOS_width)
+                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=1, width=self.DOS_width)
+                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=1, width=self.DOS_width)
                     dosspdf = pdoss + pdosp + pdosd + pdosf
                     # Weights
                     pdossweightsup = pdossweightsup + pdoss
@@ -885,13 +885,13 @@ class dftsolve:
 
             # Writing DOS
             parprint("Saving DOS for spin up...")
-            with paropen(struct+'-2-Result-DOS-Up.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-DOS-Up.csv', "w") as fd:
                 for x in zip(energies, totaldosweightsup):
                     print(*x, sep=", ", file=fd)
             
             # Writing PDOS
             parprint("Saving PDOS for spin up...")
-            with paropen(struct+'-2-Result-PDOS-Up.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-PDOS-Up.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
                 for x in zip(energies, pdossweightsup, pdospweightsup, pdospxweightsup, pdospyweightsup, pdospzweightsup, pdosdweightsup, pdosdxyweightsup, 
                              pdosdyzweightsup, pdosd3z2_r2weightsup, pdosdzxweightsup, pdosdx2_y2weightsup, pdosfweightsup, totaldosweightsup):
@@ -901,39 +901,39 @@ class dftsolve:
 
             # RAW PDOS
             parprint("Calculating and saving Raw PDOS...")
-            rawdos = DOSCalculator.from_calculator(struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
-            energies = rawdos.get_energies(npoints=DOS_npoints)
-            totaldosweights = [0.0] * DOS_npoints
-            pdossweights = [0.0] * DOS_npoints
-            pdospweights = [0.0] * DOS_npoints
-            pdospxweights = [0.0] * DOS_npoints
-            pdospyweights = [0.0] * DOS_npoints
-            pdospzweights = [0.0] * DOS_npoints
-            pdosdweights = [0.0] * DOS_npoints
-            pdosdxyweights = [0.0] * DOS_npoints
-            pdosdyzweights = [0.0] * DOS_npoints
-            pdosd3z2_r2weights = [0.0] * DOS_npoints
-            pdosdzxweights = [0.0] * DOS_npoints
-            pdosdx2_y2weights = [0.0] * DOS_npoints
-            pdosfweights = [0.0] * DOS_npoints
+            rawdos = DOSCalculator.from_calculator(self.struct+'-1-Result-Ground.gpw',soc=False, theta=0.0, phi=0.0, shift_fermi_level=True)
+            energies = rawdos.get_energies(npoints=self.DOS_npoints)
+            totaldosweights = [0.0] * self.DOS_npoints
+            pdossweights = [0.0] * self.DOS_npoints
+            pdospweights = [0.0] * self.DOS_npoints
+            pdospxweights = [0.0] * self.DOS_npoints
+            pdospyweights = [0.0] * self.DOS_npoints
+            pdospzweights = [0.0] * self.DOS_npoints
+            pdosdweights = [0.0] * self.DOS_npoints
+            pdosdxyweights = [0.0] * self.DOS_npoints
+            pdosdyzweights = [0.0] * self.DOS_npoints
+            pdosd3z2_r2weights = [0.0] * self.DOS_npoints
+            pdosdzxweights = [0.0] * self.DOS_npoints
+            pdosdx2_y2weights = [0.0] * self.DOS_npoints
+            pdosfweights = [0.0] * self.DOS_npoints
 
             # Writing RawPDOS
-            with paropen(struct+'-2-Result-RawPDOS-EachAtom.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-RawPDOS-EachAtom.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
-                for j in range(0, bulk_configuration.get_global_number_of_atoms()):
+                for j in range(0, self.bulk_configuration.get_global_number_of_atoms()):
                     print("Atom no: "+str(j+1)+", Atom Symbol: "+chem_sym[j]+" ----------------------------------------", file=fd)
-                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=None, width=DOS_width)
-                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=None, width=DOS_width)
-                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=None, width=DOS_width)
-                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=None, width=DOS_width)
-                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=None, width=DOS_width)
-                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=None, width=DOS_width)
-                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=None, width=DOS_width)
-                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=None, width=DOS_width)
-                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=None, width=DOS_width)
-                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=None, width=DOS_width)
-                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=None, width=DOS_width)
-                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=None, width=DOS_width)
+                    pdoss = rawdos.raw_pdos(energies, a=j, l=0, m=None, spin=None, width=self.DOS_width)
+                    pdosp = rawdos.raw_pdos(energies, a=j, l=1, m=None, spin=None, width=self.DOS_width)
+                    pdospx = rawdos.raw_pdos(energies, a=j, l=1, m=2, spin=None, width=self.DOS_width)
+                    pdospy = rawdos.raw_pdos(energies, a=j, l=1, m=0, spin=None, width=self.DOS_width)
+                    pdospz = rawdos.raw_pdos(energies, a=j, l=1, m=1, spin=None, width=self.DOS_width)
+                    pdosd = rawdos.raw_pdos(energies, a=j, l=2, m=None, spin=None, width=self.DOS_width)
+                    pdosdxy = rawdos.raw_pdos(energies, a=j, l=2, m=0, spin=None, width=self.DOS_width)
+                    pdosdyz = rawdos.raw_pdos(energies, a=j, l=2, m=1, spin=None, width=self.DOS_width)
+                    pdosd3z2_r2 = rawdos.raw_pdos(energies, a=j, l=2, m=2, spin=None, width=self.DOS_width)
+                    pdosdzx = rawdos.raw_pdos(energies, a=j, l=2, m=3, spin=None, width=self.DOS_width)
+                    pdosdx2_y2 = rawdos.raw_pdos(energies, a=j, l=2, m=4, spin=None, width=self.DOS_width)
+                    pdosf = rawdos.raw_pdos(energies, a=j, l=3, m=None, spin=None, width=self.DOS_width)
                     # Weights
                     dosspdf = pdoss + pdosp + pdosd + pdosf
                     pdossweights = pdossweights + pdoss
@@ -954,13 +954,13 @@ class dftsolve:
 
             # Writing DOS
             parprint("Saving DOS...")
-            with paropen(struct+'-2-Result-DOS.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-DOS.csv', "w") as fd:
                 for x in zip(energies, totaldosweights):
                     print(*x, sep=", ", file=fd)
             
             # Writing PDOS
             parprint("Saving PDOS...")
-            with paropen(struct+'-2-Result-PDOS.csv', "w") as fd:
+            with paropen(self.struct+'-2-Result-PDOS.csv', "w") as fd:
                 print("Energy, s-total, p-total, px, py, pz, d-total, dxy, dyz, d3z2_r2, dzx, dx2_y2, f-total, TOTAL", file=fd)
                 for x in zip(energies, pdossweights, pdospweights, pdospxweights, pdospyweights, pdospzweights, pdosdweights, pdosdxyweights, pdosdyzweights, 
                              pdosd3z2_r2weights, pdosdzxweights, pdosdx2_y2weights, pdosfweights, totaldosweights):
@@ -969,7 +969,7 @@ class dftsolve:
         # Finish DOS calc
         time22 = time.time()
         # Write timings of calculation
-        with paropen(struct+'-7-Result-Log-Timings.txt', 'a') as f1:
+        with paropen(self.struct+'-7-Result-Log-Timings.txt', 'a') as f1:
             print('DOS calculation: ', round((time22-time21),2), end="\n", file=f1)
 
         # Write or draw figures
@@ -977,51 +977,51 @@ class dftsolve:
             # Draw graphs only on master node
             if world.rank == 0:
                 # DOS
-                if Spin_calc == True:
-                    downf = pd.read_csv(struct+'-2-Result-DOS-Down.csv', header=None)
-                    upf = pd.read_csv(struct+'-2-Result-DOS-Up.csv', header=None)
+                if self.Spin_calc == True:
+                    downf = pd.read_csv(self.struct+'-2-Result-DOS-Down.csv', header=None)
+                    upf = pd.read_csv(self.struct+'-2-Result-DOS-Up.csv', header=None)
                     downf[0]=downf[0]+ef
                     upf[0]=upf[0]+ef
                     ax = plt.gca()
                     ax.plot(downf[0], -1.0*downf[1], 'y')
                     ax.plot(upf[0], upf[1], 'b')
-                    ax.set_xlabel(dos_xlabel[Localisation])
-                    ax.set_ylabel(dos_ylabel[Localisation])
+                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
                 else:
-                    dosf = pd.read_csv(struct+'-2-Result-DOS.csv', header=None)
+                    dosf = pd.read_csv(self.struct+'-2-Result-DOS.csv', header=None)
                     dosf[0]=dosf[0]+ef
                     ax = plt.gca()
                     ax.plot(dosf[0], dosf[1], 'b')
-                    ax.set_xlabel(dos_xlabel[Localisation])
-                    ax.set_ylabel(dos_ylabel[Localisation])
-                plt.xlim(Energy_min+ef, Energy_max+ef)
+                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
+                plt.xlim(self.Energy_min+ef, self.Energy_max+ef)
                 autoscale_y(ax)
-                plt.savefig(struct+'-2-Graph-DOS.png', dpi=300)
+                plt.savefig(self.struct+'-2-Graph-DOS.png', dpi=300)
                 #plt.show()
         else:
             # Draw graphs only on master node
             if world.rank == 0:
                 # DOS
-                if Spin_calc == True:
-                    downf = pd.read_csv(struct+'-2-Result-DOS-Down.csv', header=None)
-                    upf = pd.read_csv(struct+'-2-Result-DOS-Up.csv', header=None)
+                if self.Spin_calc == True:
+                    downf = pd.read_csv(self.struct+'-2-Result-DOS-Down.csv', header=None)
+                    upf = pd.read_csv(self.struct+'-2-Result-DOS-Up.csv', header=None)
                     downf[0]=downf[0]+ef
                     upf[0]=upf[0]+ef
                     ax = plt.gca()
                     ax.plot(downf[0], -1.0*downf[1], 'y')
                     ax.plot(upf[0], upf[1], 'b')
-                    ax.set_xlabel(dos_xlabel[Localisation])
-                    ax.set_ylabel(dos_ylabel[Localisation])
+                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
                 else:
-                    dosf = pd.read_csv(struct+'-2-Result-DOS.csv', header=None)
+                    dosf = pd.read_csv(self.struct+'-2-Result-DOS.csv', header=None)
                     dosf[0]=dosf[0]+ef
                     ax = plt.gca()
                     ax.plot(dosf[0], dosf[1], 'b')
-                    ax.set_xlabel(dos_xlabel[Localisation])
-                    ax.set_ylabel(dos_ylabel[Localisation])
-                plt.xlim(Energy_min+ef, Energy_max+ef)
+                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
+                plt.xlim(self.Energy_min+ef, self.Energy_max+ef)
                 autoscale_y(ax)
-                plt.savefig(struct+'-2-Graph-DOS.png', dpi=300)
+                plt.savefig(self.struct+'-2-Graph-DOS.png', dpi=300)
 
     def bandcalc(self, drawfigs = False):
         """
