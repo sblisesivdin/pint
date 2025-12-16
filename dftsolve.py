@@ -559,7 +559,7 @@ class dftsolve:
         time12 = time.time()
 
         # Write timings of calculation
-        with paropen(struct+'-7-Result-Log-Timings.txt', 'a') as f1:
+        with paropen(self.struct+'-7-Result-Log-Timings.txt', 'a') as f1:
             print('Ground state: ', round((time12-time11),2), end="\n", file=f1)
 
     def elasticcalc(self, drawfigs=False, strain_n=5, strain_mag=0.01, thickness=None):
