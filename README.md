@@ -1,7 +1,6 @@
 > [!IMPORTANT]
 > **gpaw-tools** has evolved and is now called **Pint**!
-> 
-> The **gpaw-tools** project started as a script that only used ASE and GPAW, but over 4 years, it became code that uses many libraries such as ASAP3, phonopy, Elastic, and others. It is now being rewritten to > incorporate modern Machine Learning capabilities (MACE, CHGNet, SevenNet) into its complex structure.
+> The **gpaw-tools** project began as a script that utilized only ASE and GPAW. Still, over the course of four years, it evolved into code that leverages multiple libraries, including ASAP3, Phonopy, Elastic, OpenKIM, and others. It is now being rewritten to > incorporate modern Machine Learning capabilities (MACE, CHGNet, SevenNet) into its structure.
 > 
 > **Pint** is still in beta. Please continue to use **gpaw-tools** until further notice.
 
