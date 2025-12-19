@@ -179,6 +179,7 @@ class RawFormatter(HelpFormatter):
 def struct_from_file(inputfile, geometryfile):
     """Load variables from parse function and return DFTConfig instance."""
     # Works like from FILE import *
+    sys.path.append(str(Path(inputfile).parent))
     inputf = __import__(Path(inputfile).stem, globals(), locals(), ['*'])
     
     # Create a config object with loaded parameters
@@ -186,8 +187,7 @@ def struct_from_file(inputfile, geometryfile):
     for k in dir(inputf):
         if not k.startswith('_'):
             config_dict[k] = getattr(inputf, k)
-            # Also set as globals for backward compatibility with methods that haven't been refactored yet
-            globals()[k] = getattr(inputf, k)
+
     
     # Create DFTConfig instance
     config = DFTConfig(**{k: v for k, v in config_dict.items() if k in DFTConfig.__dataclass_fields__})
@@ -640,12 +640,12 @@ class dftsolve:
                         deformed_atoms.set_cell(deformed_atoms.cell @ strain_tensor, scale_atoms=True)
             
                         # Attach a new GPAW calculator for the deformed structure using PBE.
-                        deformed_atoms.set_calculator(GPAW(mode=PW(ecut=Cut_off_energy, force_complex_dtype=True), xc=XC_calc, 
-                                    nbands='200%', setups= Setup_params, 
-                                    parallel={'domain': world.size}, spinpol=Spin_calc, 
-                                    kpts={'size': (Ground_kpts_x, Ground_kpts_y, Ground_kpts_z), 'gamma': Gamma},
-                                    mixer=Mixer_type, txt=struct+'-1.5-Log-Elastic-deformations.txt', charge=Total_charge,
-                                    convergence = Ground_convergence, occupations = Occupation))
+                        deformed_atoms.set_calculator(GPAW(mode=PW(ecut=self.config.Cut_off_energy, force_complex_dtype=True), xc=self.config.XC_calc, 
+                                    nbands='200%', setups=self.config.Setup_params, 
+                                    parallel={'domain': world.size}, spinpol=self.config.Spin_calc, 
+                                    kpts={'size': (self.config.Ground_kpts_x, self.config.Ground_kpts_y, self.config.Ground_kpts_z), 'gamma': self.config.Gamma},
+                                    mixer=self.config.Mixer_type, txt=self.struct+'-1.5-Log-Elastic-deformations.txt', charge=self.config.Total_charge,
+                                    convergence=self.config.Ground_convergence, occupations=self.config.Occupation))
                         try:
                             deformed_atoms.get_potential_energy()
                             # Force stress calculation.
@@ -1882,129 +1882,11 @@ def projected_weights(calc):
 
 # End of Projected Band Structure related functions----------------
 
+# Version
+__version__ = "v25.10.1b1"
+
 if __name__ == "__main__":
-    #
-    # DEFAULT VALUES
-    # These values (with bulk configuration) can be used to run this script without using inputfile (py file)
-    # and configuration file (cif file).
-    # -------------------------------------------------------------
-    Mode = 'PW'             # Use PW, LCAO, FD  (PW is more accurate, LCAO is quicker mostly.)
-    # -------------------------------------------------------------
-    Ground_calc = False     # Ground state calculations
-    Geo_optim = False       # Geometric optimization with LFBGS
-    Elastic_calc = False    # Elastic calculation
-    DOS_calc = False         # DOS calculation
-    Band_calc = False        # Band structure calculation
-    Density_calc = False    # Calculate the all-electron density?
-    Phonon_calc = False     # Phonon calculations
-    Optical_calc = False     # Calculate the optical properties
-
-    # -------------------------------------------------------------
-    # Parameters
-    # -------------------------------------------------------------
-    # GEOMETRY
-    Optimizer = 'QuasiNewton' # QuasiNewton, GPMin, LBFGS or FIRE
-    Max_F_tolerance = 0.05 	# Maximum force tolerance in LBFGS geometry optimization. Unit is eV/Ang.
-    Max_step = 0.1          # How far is a single atom allowed to move. Default is 0.2 Ang.
-    Alpha = 60.0            # LBFGS only: Initial guess for the Hessian (curvature of energy surface)
-    Damping = 1.0           # LBFGS only: The calculated step is multiplied with this number before added to the positions
-    Fix_symmetry = False    # True for preserving the spacegroup symmetry during optimisation
-    # Which components of strain will be relaxed: EpsX, EpsY, EpsZ, ShearYZ, ShearXZ, ShearXY
-    # Example: For a x-y 2D nanosheet only first 2 component will be true
-    Relax_cell = [False, False, False, False, False, False]
-    Hydrostatic_pressure = 0.0 # GPa
-
-    # GROUND ----------------------
-    Cut_off_energy = 340 	# eV
-    Ground_kpts_density = None     # pts per Å^-1  If the user prefers to use this, Ground_kpts_x,y,z will not be used automatically.
-    Ground_kpts_x = 5 	# kpoints in x direction
-    Ground_kpts_y = 5	# kpoints in y direction
-    Ground_kpts_z = 5	# kpoints in z direction
-    Ground_gpts_density = None     # (for LCAO) Unit is Å. If the user prefers to use this, Ground_gpts_x,y,z will not be used automatically.
-    Ground_gpts_x = 8              # grid points in x direction (for LCAO)
-    Ground_gpts_y = 8              # grid points in y direction (for LCAO)
-    Ground_gpts_z = 8              # grid points in z direction (for LCAO)
-    Setup_params = {}            # Can be used like {'N': ':p,6.0'} for Hubbard, can also be used for many corrections.https://wiki.fysik.dtu.dk/gpaw/devel/setups.html#gpaw.setup.Setup For none use {}
-    XC_calc = 'LDA'         # Exchange-Correlation, choose one: LDA, PBE, GLLBSCM, HSE06, HSE03, revPBE, RPBE, PBE0, EXX, B3LYP
-    Ground_convergence = {}   # Convergence items for ground state calculations
-    Occupation = {'name': 'fermi-dirac', 'width': 0.05}  # Refer to GPAW docs: https://wiki.fysik.dtu.dk/gpaw/documentation/basic.html#occupation-numbers
-    Mixer_type = MixerSum(0.1, 3, 50) # MixerSum(beta,nmaxold, weight) default:(0.1,3,50), you can try (0.02, 5, 100) and (0.05, 5, 50)
-    Spin_calc = False        # Spin polarized calculation?
-    Magmom_per_atom = 1.0    # Magnetic moment per atom
-    Magmom_single_atom = None # Magnetic moment for a single atom [atom_no, magmom]
-    Total_charge = 0.0       # Total charge. Normally 0.0 for a neutral system.
-
-    # DOS ----------------------
-    DOS_npoints = 501                # Number of points
-    DOS_width = 0.1                  # Width of Gaussian smearing. Use 0.0 for linear tetrahedron interpolation
-    DOS_convergence = {}             # Convergence items for DOS calculations
-
-    # BAND ----------------------
-    Gamma = True
-    Band_path = 'LGL'	    # Brillouin zone high symmetry points
-    Band_npoints = 61		# Number of points between high symmetry points
-    Energy_max = 5 		# eV. It is the maximum energy value for band structure and DOS figures.
-    Energy_min = -5     # eV. It is the minimum energy value for band structure and DOS figures.
-    Band_convergence = {'bands':8}   # Convergence items for band calculations
-
-    # ELECTRON DENSITY ----------------------
-    Refine_grid = 4             # refine grid for all electron density (1, 2 [=default] and 4)
-
-    # PHONON -------------------------
-    Phonon_PW_cutoff = 400
-    Phonon_kpts_x = 3
-    Phonon_kpts_y = 3
-    Phonon_kpts_z = 3
-    Phonon_supercell = np.diag([2, 2, 2])
-    Phonon_displacement = 1e-3
-    Phonon_path = 'LGL'	    # Brillouin zone high symmetry points
-    Phonon_npoints = 61		# Number of points between high symmetry points
-    Phonon_acoustic_sum_rule = True
-
-    # OPTICAL ----------------------
-    Opt_calc_type = 'BSE'         # BSE or RPA
-    Opt_shift_en = 0.0          # Shifting of the energy
-    Opt_BSE_valence = range(0,3)  # Valence bands that will be used in BSE calculation
-    Opt_BSE_conduction = range(4,7) # Conduction bands that will be used in BSE calculation
-    Opt_BSE_min_en = 0.0       # Results will be started from this energy (BSE only)
-    Opt_BSE_max_en = 20.0      # Results will be ended at this energy (BSE only)
-    Opt_BSE_num_of_data = 1001   # Number of data points in BSE  calculation
-    Opt_num_of_bands = 8	# Number of bands
-    Opt_FD_smearing = 0.05       # Fermi Dirac smearing for optical calculations
-    Opt_eta = 0.05             # Eta for Optical calculations
-    Opt_domega0 = 0.05         # Domega0 for Optical calculations
-    Opt_omega2 = 5.0           # Frequency at which the non-lin freq grid has doubled the spacing
-    Opt_cut_of_energy = 100             # Cut-off energy for optical calculations
-    Opt_nblocks = world.size            # Split matrices in nblocks blocks and distribute them G-vectors
-                            # or frequencies over processes. Also can use world.size
-
-    #GENERAL ----------------------
-    MPI_cores = 4            # This is for gg.py. Not used in this script.
-    Localisation = "en_UK"
-
-    # -------------------------------------------------------------
-    # Default Bulk Configuration
-    # -------------------------------------------------------------
-    bulk_configuration = Atoms(
-        [
-        Atom('C', ( 0.0, 0.0, 5.0 )),
-        Atom('C', ( -1.2339999999999995, 2.1373506965399947, 5.0 )),
-        Atom('C', ( 2.4679999999999995, 0.0, 5.0 )),
-        Atom('C', ( 1.234, 2.1373506965399947, 5.0 )),
-        Atom('C', ( 2.468000000230841e-06, 1.424899039459532, 5.0 )),
-        Atom('C', ( -1.2339975319999992, 3.5622497359995267, 5.0 )),
-        Atom('C', ( 2.4680024680000003, 1.424899039459532, 5.0 )),
-        Atom('C', ( 1.234002468000001, 3.5622497359995267, 5.0 )),
-        ],
-        cell=[(4.936, 0.0, 0.0), (-2.467999999999999, 4.274701393079989, 0.0), (0.0, 0.0, 20.0)],
-        pbc=True,
-        )
-    # ------------------ End of Localisation Tables --------------------------
-    
-    # Version
-    __version__ = "v25.10.1b1"
-
-    parser = ArgumentParser(prog ='dftsolve.py', description=Description, formatter_class=RawFormatter)
+    parser = ArgumentParser(prog ='gpawtools.py', description=Description, formatter_class=RawFormatter)
     parser.add_argument("-i", "--input", dest = "inputfile", help="Use input file for calculation variables (also you can insert geometry)")
     parser.add_argument("-g", "--geometry",dest ="geometryfile", help="Use CIF file for geometry")
     parser.add_argument("-v", "--version", dest="version", action='store_true')
@@ -2024,12 +1906,11 @@ if __name__ == "__main__":
         parprint("No arguments used.")
         quit()
 
-    # DEFAULT VALUES
     energymeas = False
     inFile = None
     drawfigs = False
     configpath = None
-    Outdirname = ''
+
 
     try:
         if args.version == True:
