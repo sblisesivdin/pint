@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> **gpaw-tools** has evolved and is now called **Pint**!
+> 
+> The **gpaw-tools** project started as a script that only used ASE and GPAW, but over 4 years, it became code that uses many libraries such as ASAP3, phonopy, Elastic, and others. It is now being rewritten to > incorporate modern Machine Learning capabilities (MACE, CHGNet, SevenNet) into its complex structure.
+> 
+> **Pint** is still in beta. Please continue to use **gpaw-tools** until further notice.
+
 # Pint
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Issues:](https://img.shields.io/github/issues/sblisesivdin/pint)](https://github.com/sblisesivdin/pint/issues)
