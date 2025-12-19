@@ -19,10 +19,13 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
+import logging
 
 from ase.io import read, write
 
 RY_TO_EV = 13.605693009
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -107,7 +110,11 @@ def parse_qe_input(path: Path) -> QEInputSettings:
                 try:
                     settings.starting_magnetization[species] = float(value.rstrip(',').replace('d', 'e'))
                 except ValueError:
-                    pass
+                    logger.warning(
+                        "Unable to parse starting_magnetization for species %r from value %r; leaving default",
+                        species,
+                        value,
+                    )
                 continue
 
             value_clean = value.rstrip(",").replace("'", "").replace('"', '').strip()
@@ -120,7 +127,10 @@ def parse_qe_input(path: Path) -> QEInputSettings:
                 try:
                     settings.ecutwfc = float(value_clean)
                 except ValueError:
-                    pass
+                    logger.warning(
+                        "Unable to parse ecutwfc from value %r; leaving default",
+                        value_clean,
+                    )
             elif key_lower == "occupations":
                 settings.occupations = value_clean.lower()
             elif key_lower == "smearing":
@@ -129,17 +139,26 @@ def parse_qe_input(path: Path) -> QEInputSettings:
                 try:
                     settings.degauss = float(value_clean)
                 except ValueError:
-                    pass
+                    logger.warning(
+                        "Unable to parse degauss from value %r; leaving default",
+                        value_clean,
+                    )
             elif key_lower == "nspin":
                 try:
                     settings.nspin = int(float(value_clean))
                 except ValueError:
-                    pass
+                    logger.warning(
+                        "Unable to parse nspin from value %r; leaving default",
+                        value_clean,
+                    )
             elif key_lower == "conv_thr":
                 try:
                     settings.conv_thr = float(value_clean)
                 except ValueError:
-                    pass
+                    logger.warning(
+                        "Unable to parse conv_thr from value %r; leaving default",
+                        value_clean,
+                    )
     return settings
 
 
