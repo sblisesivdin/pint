@@ -38,7 +38,6 @@ try:
     from ase.io import read, write
     from ase.optimize import BFGS, FIRE, LBFGS
     from ase.constraints import ExpCellFilter, UnitCellFilter
-    from ase.units import GPa
 except ImportError:
     sys.exit("Error: ASE (Atomic Simulation Environment) library not found.")
 
