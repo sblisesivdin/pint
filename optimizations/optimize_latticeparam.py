@@ -80,11 +80,12 @@ parprint("----------------------------------")
 with paropen('Optimize-Lattice_Table-LatticeParam.txt', 'w') as f:
     for latt_a in a_list:
         for latt_c in c_list:
-            if datapoint_count_c == 1:
-                latt_c = c
-                bulk_configuration.set_cell(cellpar_to_cell([a*latt_a/a, b*latt_a/a, c, alpha, beta, gamma]), scale_atoms = True)
-            else:
-                bulk_configuration.set_cell(cellpar_to_cell([a*latt_a/a, b*latt_a/a, c*latt_c/c, alpha, beta, gamma]), scale_atoms = True)
+            bulk_configuration.set_cell(
+                cellpar_to_cell([a * latt_a / a,
+                                 b * latt_a / a,
+                                 c * latt_c / c,
+                                 alpha, beta, gamma]),
+                scale_atoms=True)
 
             # --------------------------------------------------------------
             # create the cell, then find, store and print the total energy for a in a_list:

@@ -10,3 +10,4 @@
 - Remove GW calculations and related parameters from dftsolve.py
 - Simplify GPW file writing logic (Always mode="all")
 - A major refactorization of global variable usage to dataclass! This change ensures type safety, centralized configuration, reduced global namespace pollution, and improved code organization with total backward compatibility.
+- In addition to the refactorization of global variable usage, more than 30 security warnings have been fixed.

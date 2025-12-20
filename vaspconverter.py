@@ -215,7 +215,7 @@ def determine_system_name(poscar_path: Path, explicit_name: Optional[str]) -> st
             if title:
                 return _sanitize_name(title)
     except OSError:
-        pass
+        _LOGGER.warning("Could not read POSCAR title from %s; using filename as system name", poscar_path)
     return _sanitize_name(poscar_path.stem)
 
 
