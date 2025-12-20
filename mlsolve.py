@@ -214,8 +214,8 @@ def main():
                 try:
                     mag = atoms.get_magnetic_moments()
                     print(f"Magnetic Moments (first 5 atoms): {mag[:5]}...")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Warning: Could not retrieve magnetic moments: {e}")
         except Exception as e:
             print(f"Calculation Error: {e}")
 
