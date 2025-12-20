@@ -31,6 +31,7 @@ import time
 import warnings
 import numpy as np
 from pathlib import Path
+import os
 
 # ASE Libraries
 try:
@@ -44,6 +45,62 @@ except ImportError:
 
 # Suppress warnings (clean output)
 warnings.filterwarnings("ignore")
+
+from dataclasses import dataclass, field
+from typing import Optional, Dict, List, Any
+
+@dataclass
+class MLConfig:
+    """Configuration dataclass to hold all ML calculation parameters."""
+    model: str = 'mace'
+    task: str = 'optimize'
+    device: str = 'cpu'
+    fmax: float = 0.05
+    steps: int = 200
+    cell_relax: bool = True
+    optimizer: str = 'BFGS'
+    trajectory: str = 'out.traj'
+    logfile: str = 'mlsolve.log'
+    out_file: str = 'optimized.cif'
+    bulk_configuration: Any = None
+    Outdirname: str = ''
+
+def config_from_file(inputfile, geometryfile):
+    """Load variables from parse function and return MLConfig instance."""
+    # Works like from FILE import *
+    sys.path.append(str(Path(inputfile).parent))
+    inputf = __import__(Path(inputfile).stem, globals(), locals(), ['*'])
+    
+    # Create a config object with loaded parameters
+    config_dict = {}
+    for k in dir(inputf):
+        if not k.startswith('_'):
+            config_dict[k] = getattr(inputf, k)
+    
+    # Create MLConfig instance
+    config = MLConfig(**{k: v for k, v in config_dict.items() if k in MLConfig.__dataclass_fields__})
+    
+    # If there is a CIF input, use it. Otherwise use the bulk configuration provided above.
+    if geometryfile is None:
+        if config.Outdirname != '':
+            struct = config.Outdirname
+        else:
+            struct = 'results' # All files will get their names from this file
+    else:
+        struct = Path(geometryfile).stem
+        config.bulk_configuration = read(geometryfile, index='-1')
+        print("Number of atoms imported from CIF file:"+str(config.bulk_configuration.get_global_number_of_atoms()))
+
+    # Output directory
+    if config.Outdirname != '':
+        structpath = os.path.join(os.getcwd(), config.Outdirname)
+    else:
+        structpath = os.path.join(os.getcwd(), struct)
+
+    if not os.path.isdir(structpath):
+        os.makedirs(structpath, exist_ok=True)
+    struct = os.path.join(structpath, struct)
+    return struct, config
 
 # -----------------------------------------------------------------------------
 # SECTION 1: CALCULATOR FACTORY
@@ -124,8 +181,10 @@ def get_ml_calculator(model_type, device='cpu', **kwargs):
 # SECTION 2: ARGUMENT PARSING & MAIN LOGIC
 # -----------------------------------------------------------------------------
 
-def parse_arguments():
-    """Parses command line arguments."""
+def main():
+    # Start time
+    t0 = time.time()
+    
     parser = argparse.ArgumentParser(
         description="MLSolve: Unified Interface for MACE, CHGNet, and SevenNet",
         formatter_class=argparse.RawTextHelpFormatter
@@ -135,71 +194,41 @@ def parse_arguments():
     parser.add_argument('-i', '--input', type=str, required=True, 
                         help="Configuration dictionary (as a string).\n"
                              "Example: \"{'model': 'mace', 'fmax': 0.05, 'task': 'optimize'}\"")
-    return parser.parse_args()
+    args = parser.parse_args()
 
-def main():
-    # Start time
-    t0 = time.time()
+    # Load struct and config
+    struct, config = config_from_file(inputfile=args.input, geometryfile=args.geometry)
     
-    # 1. Load arguments
-    args = parse_arguments()
-    
-    # 2. Safely parse dictionary string using ast.literal_eval
-    try:
-        user_params = ast.literal_eval(args.input)
-        if not isinstance(user_params, dict):
-            raise ValueError
-    except (ValueError, SyntaxError):
-        sys.exit("Error: -i argument must be a valid Python dictionary.\n"
-                 "Example usage: -i \"{'model': 'chgnet', 'device': 'cpu'}\"")
-
-    # 3. Default configuration and override with user input
-    config = {
-        'model': 'mace',           # Default model
-        'task': 'optimize',        # Task: 'optimize', 'static', 'md' (future)
-        'device': 'cpu',          # Hardware acceleration: 'cuda', 'cpu', 'mps'
-        'fmax': 0.05,              # Force convergence criterion (eV/Å)
-        'steps': 200,              # Max optimization steps
-        'cell_relax': True,        # Relax the unit cell? (Variable Cell Relaxation)
-        'optimizer': 'BFGS',       # Algorithm: 'BFGS' or 'FIRE'
-        'trajectory': 'out.traj',  # Output trajectory file
-        'logfile': 'mlsolve.log',  # Log file
-        'out_file': 'optimized.cif' # Output structure file
-    }
-    config.update(user_params)
-
     print("=========================================================")
     print(f"  MLSolve - {time.ctime()}")
     print("=========================================================")
     print(f"  Geometry File   : {args.geometry}")
-    print(f"  Model           : {config['model'].upper()}")
-    print(f"  Task            : {config['task']}")
-    print(f"  Device          : {config['device']}")
+    print(f"  Model           : {config.model.upper()}")
+    print(f"  Task            : {config.task}")
+    print(f"  Device          : {config.device}")
     print("=========================================================\n")
 
     # 4. Read geometry
-    input_path = Path(args.geometry)
-    if not input_path.exists():
-        sys.exit(f"Error: file '{input_path}' not found.")
-    
-    try:
-        atoms = read(input_path)
-        print(f"Structure Loaded: {atoms.get_chemical_formula()}")
-        print(f"Number of Atoms: {len(atoms)}")
-        print(f"Cell           : {atoms.cell.cellpar().round(3)}\n")
-    except Exception as e:
-        sys.exit(f"Error: Geometry file could not be read. ASE error: {e}")
+    atoms = config.bulk_configuration
+    print(f"Structure Loaded: {atoms.get_chemical_formula()}")
+    print(f"Number of Atoms: {len(atoms)}")
+    print(f"Cell           : {atoms.cell.cellpar().round(3)}\n")
+
 
     # 5. Initialize and attach the calculator
+    calculator_params = config.__dict__.copy()
+    model_type = calculator_params.pop('model')
+    device_param = calculator_params.pop('device')
+
     calc = get_ml_calculator(
-        config['model'], 
-        device=config['device'], 
-        **config
+        model_type,
+        device=device_param,
+        **calculator_params
     )
     atoms.calc = calc
 
     # 6. Execute task
-    if config['task'] == 'static':
+    if config.task == 'static':
         print("--- Starting Static Calculation ---")
         try:
             pe = atoms.get_potential_energy()
@@ -210,7 +239,7 @@ def main():
             print(f"Max Force        : {fmax:.6f} eV/Å")
             
             # CHGNet-specific output (magnetic moments)
-            if config['model'] == 'chgnet':
+            if config.model == 'chgnet':
                 try:
                     mag = atoms.get_magnetic_moments()
                     print(f"Magnetic Moments (first 5 atoms): {mag[:5]}...")
@@ -219,12 +248,12 @@ def main():
         except Exception as e:
             print(f"Calculation Error: {e}")
 
-    elif config['task'] == 'optimize':
-        print(f"--- Starting Geometry Optimization ({config['optimizer']}) ---")
-        print(f"Target fmax: {config['fmax']} eV/Å")
+    elif config.task == 'optimize':
+        print(f"--- Starting Geometry Optimization ({config.optimizer}) ---")
+        print(f"Target fmax: {config.fmax} eV/Å")
         
         # Relaxation target: atomic positions + cell or only positions
-        if config['cell_relax']:
+        if config.cell_relax:
             print("Info: Relaxing both atomic positions and unit cell (ExpCellFilter).")
             ecf = ExpCellFilter(atoms)
             opt_target = ecf
@@ -233,20 +262,20 @@ def main():
             opt_target = atoms
 
         # Optimizer selection
-        if config['optimizer'].upper() == 'FIRE':
-            dyn = FIRE(opt_target, trajectory=config['trajectory'], logfile=config['logfile'])
+        if config.optimizer.upper() == 'FIRE':
+            dyn = FIRE(opt_target, trajectory=config.trajectory, logfile=config.logfile)
         else:
-            dyn = BFGS(opt_target, trajectory=config['trajectory'], logfile=config['logfile'])
+            dyn = BFGS(opt_target, trajectory=config.trajectory, logfile=config.logfile)
 
         try:
-            dyn.run(fmax=config['fmax'], steps=config['steps'])
+            dyn.run(fmax=config.fmax, steps=config.steps)
             
-            write(config['out_file'], atoms)
+            write(config.out_file, atoms)
             print(f"\nOptimization completed.")
             print(f"Final Energy : {atoms.get_potential_energy():.6f} eV")
             print(f"Final Cell   : {atoms.cell.cellpar().round(3)}")
-            print(f"Output       : {config['out_file']}")
-            print(f"Trajectory   : {config['trajectory']}")
+            print(f"Output       : {config.out_file}")
+            print(f"Trajectory   : {config.trajectory}")
             
         except Exception as e:
             print(f"\nError during optimization: {e}")
@@ -257,6 +286,7 @@ def main():
     elapsed = time.time() - t0
     print(f"\nTotal Time: {elapsed:.2f} seconds")
     print("Done.")
+
 
 if __name__ == "__main__":
     main()
