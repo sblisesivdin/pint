@@ -323,23 +323,21 @@ if Outdirname != '':
     if not structpath.is_absolute():
         structpath = (base_directory / structpath).resolve()
 else:
+    # Use the geometry file's directory and stem for the output folder name
     if inFile is not None:
         structdir = Path(inFile).resolve().parent
-        structpath = (structdir / f"{struct_name}_results").resolve()
-    elif input_stem is not None:
-        structpath = (config_dir / input_stem).resolve()
+        structpath = (structdir / struct_name).resolve() # Now uses struct_name directly
     else:
-        structpath = (base_directory / struct_name).resolve()
+        # Fallback if inFile is not available (though it should be mandatory)
+        structpath = (base_directory / "results").resolve()
 
 if not os.path.isdir(structpath):
     os.makedirs(structpath, exist_ok=True)
 
-if inFile is not None:
-    struct_base = os.path.join(str(structpath), struct_name)
-elif input_stem is not None:
-    struct_base = os.path.join(str(structpath), input_stem)
-else:
-    struct_base = os.path.join(str(structpath), struct_name)
+# Always use the geometry file's stem for the base name of the files
+# This ensures consistency: output files inside the folder named after the geometry file,
+# also start with the geometry file's stem.
+struct_base = os.path.join(str(structpath), struct_name)
 
 initial_structure = bulk_configuration.copy()
 temperature_options = [float(v) for v in _get_run_values('Temperature', Temperature, namespace)]
