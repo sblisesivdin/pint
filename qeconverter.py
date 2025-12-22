@@ -64,7 +64,6 @@ def parse_qe_input(path: Path) -> QEInputSettings:
     lines = [clean_line(ln) for ln in path.read_text().splitlines()]
     lines = [ln for ln in lines if ln]
 
-    current_section = None
     expect_kpoints = False
     k_mode: Optional[str] = None
 
