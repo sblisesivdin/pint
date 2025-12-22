@@ -730,7 +730,7 @@ class dftsolve:
                 print(f"Poisson's ratio (Hill avg): {nu_hill:.3f}", file=fd)
 
 
-    def doscalc(self, drawfigs = False):
+    def doscalc(self):
         """
         This method performs density of states (DOS) calculations for the given structure using
         the ground state results. It computes the DOS for various energy levels and saves the
@@ -974,57 +974,31 @@ class dftsolve:
             print('DOS calculation: ', round((time22-time21),2), end="\n", file=f1)
 
         # Write or draw figures
-        if drawfigs == True:
-            # Draw graphs only on master node
-            if world.rank == 0:
-                # DOS
-                if self.Spin_calc == True:
-                    downf = pd.read_csv(self.struct+'-2-Result-DOS-Down.csv', header=None)
-                    upf = pd.read_csv(self.struct+'-2-Result-DOS-Up.csv', header=None)
-                    downf[0]=downf[0]+ef
-                    upf[0]=upf[0]+ef
-                    ax = plt.gca()
-                    ax.plot(downf[0], -1.0*downf[1], 'y')
-                    ax.plot(upf[0], upf[1], 'b')
-                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
-                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
-                else:
-                    dosf = pd.read_csv(self.struct+'-2-Result-DOS.csv', header=None)
-                    dosf[0]=dosf[0]+ef
-                    ax = plt.gca()
-                    ax.plot(dosf[0], dosf[1], 'b')
-                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
-                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
-                plt.xlim(self.Energy_min+ef, self.Energy_max+ef)
-                autoscale_y(ax)
-                plt.savefig(self.struct+'-2-Graph-DOS.png', dpi=300)
-                #plt.show()
-        else:
-            # Draw graphs only on master node
-            if world.rank == 0:
-                # DOS
-                if self.Spin_calc == True:
-                    downf = pd.read_csv(self.struct+'-2-Result-DOS-Down.csv', header=None)
-                    upf = pd.read_csv(self.struct+'-2-Result-DOS-Up.csv', header=None)
-                    downf[0]=downf[0]+ef
-                    upf[0]=upf[0]+ef
-                    ax = plt.gca()
-                    ax.plot(downf[0], -1.0*downf[1], 'y')
-                    ax.plot(upf[0], upf[1], 'b')
-                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
-                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
-                else:
-                    dosf = pd.read_csv(self.struct+'-2-Result-DOS.csv', header=None)
-                    dosf[0]=dosf[0]+ef
-                    ax = plt.gca()
-                    ax.plot(dosf[0], dosf[1], 'b')
-                    ax.set_xlabel(self.dos_xlabel[self.Localisation])
-                    ax.set_ylabel(self.dos_ylabel[self.Localisation])
-                plt.xlim(self.Energy_min+ef, self.Energy_max+ef)
-                autoscale_y(ax)
-                plt.savefig(self.struct+'-2-Graph-DOS.png', dpi=300)
+        # Draw graphs only on master node
+        if world.rank == 0:
+            # DOS
+            if self.Spin_calc == True:
+                downf = pd.read_csv(self.struct+'-2-Result-DOS-Down.csv', header=None)
+                upf = pd.read_csv(self.struct+'-2-Result-DOS-Up.csv', header=None)
+                downf[0]=downf[0]+ef
+                upf[0]=upf[0]+ef
+                ax = plt.gca()
+                ax.plot(downf[0], -1.0*downf[1], 'y')
+                ax.plot(upf[0], upf[1], 'b')
+                ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                ax.set_ylabel(self.dos_ylabel[self.Localisation])
+            else:
+                dosf = pd.read_csv(self.struct+'-2-Result-DOS.csv', header=None)
+                dosf[0]=dosf[0]+ef
+                ax = plt.gca()
+                ax.plot(dosf[0], dosf[1], 'b')
+                ax.set_xlabel(self.dos_xlabel[self.Localisation])
+                ax.set_ylabel(self.dos_ylabel[self.Localisation])
+            plt.xlim(self.Energy_min+ef, self.Energy_max+ef)
+            autoscale_y(ax)
+            plt.savefig(self.struct+'-2-Graph-DOS.png', dpi=300)
 
-    def bandcalc(self, drawfigs = False):
+    def bandcalc(self):
         """
         This method performs band structure calculations for the given structure using the
         ground state results. It computes the electronic band structure along specified
@@ -1165,16 +1139,10 @@ class dftsolve:
             print('Band calculation: ', round((time32-time31),2), end="\n", file=f1)
 
         # Write or draw figures
-        if drawfigs == True:
-            # Draw graphs only on master node
-            if world.rank == 0:
-                # Band Structure
-                bs.plot(filename=self.struct+'-3-Graph-Band.png', show=True, emax=self.Energy_max + bs.reference, emin=self.Energy_min + bs.reference, ylabel=self.band_ylabel[self.Localisation])
-        else:
-            # Draw graphs only on master node
-            if world.rank == 0:
-                # Band Structure
-                bs.plot(filename=self.struct+'-3-Graph-Band.png', show=False, emax=self.Energy_max + bs.reference, emin=self.Energy_min + bs.reference, ylabel=self.band_ylabel[self.Localisation])
+        # Draw graphs only on master node
+        if world.rank == 0:
+            # Band Structure
+            bs.plot(filename=self.struct+'-3-Graph-Band.png', show=False, emax=self.Energy_max + bs.reference, emin=self.Energy_min + bs.reference, ylabel=self.band_ylabel[self.Localisation])
 
     def densitycalc(self):
         """
@@ -1889,7 +1857,6 @@ if __name__ == "__main__":
     parser.add_argument("-g", "--geometry",dest ="geometryfile", help="Use CIF file for geometry")
     parser.add_argument("-v", "--version", dest="version", action='store_true')
     parser.add_argument("-e", "--energy", dest="energymeas", action='store_true')
-    parser.add_argument("-d", "--drawfigures", dest="drawfigs", action='store_true', help="Draws DOS and band structure figures at the end of calculation.")
 
     args = None
 
@@ -1906,7 +1873,6 @@ if __name__ == "__main__":
 
     energymeas = False
     inFile = None
-    drawfigs = False
     configpath = None
 
 
@@ -1946,9 +1912,6 @@ if __name__ == "__main__":
 
         if args.geometryfile :
             inFile = os.path.join(os.getcwd(),args.geometryfile)
-
-        if args.drawfigs == True:
-            drawfigs = True
 
         if args.energymeas == True:
             try:
@@ -1994,15 +1957,15 @@ if __name__ == "__main__":
 
         if config.Elastic_calc == True:
             # Run elastic calculation
-            dftsolver.elasticcalc(drawfigs = drawfigs)
+            dftsolver.elasticcalc()
 
         if config.DOS_calc == True:
             # Run DOS calculation
-            dftsolver.doscalc(drawfigs = drawfigs)
+            dftsolver.doscalc()
 
         if config.Band_calc == True:
             # Run band calculation
-            dftsolver.bandcalc(drawfigs = drawfigs)
+            dftsolver.bandcalc()
 
         if config.Density_calc == True:
             # Run all-electron density calculation
