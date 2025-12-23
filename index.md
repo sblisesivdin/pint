@@ -8,7 +8,7 @@ layout: default
 
 **[Pint](http://sblisesivdin.github.io/pint)** is a powerful and user-friendly user interface (UI) tool for conducting Density Functional Theory (DFT) and molecular dynamics (MD) calculations. In the near future, machine learning features will be added.
 
-*gpaw-tools** has evolved and is now called **Pint**!
+**gpaw-tools** has evolved and is now called **Pint**!
 
 The **gpaw-tools** project began as a script that utilized only ASE and GPAW. Still, over the course of four years, it evolved into code that leverages multiple libraries, including ASAP3, Phonopy, Elastic, OpenKIM, and others. It is now being rewritten to incorporate modern Machine Learning capabilities (MACE, CHGNet, SevenNet) into its structure.
 
