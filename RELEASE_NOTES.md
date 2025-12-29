@@ -14,3 +14,4 @@
 - An easy example for machine learning capabilities is added as examples/Graphene-ML
 - Behavior of output folder creation and writing in that directory is now same for dftsolve.py, mdsolve.py and mlsolve.py
 - Drawing to screen -d argument is removed.
+- pip install nanoworks works.

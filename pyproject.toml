@@ -13,3 +13,8 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [{name = "Sefer Bora Lisesivdin" }, {name = "Beyza Sarikavak-Lisesivdin"}]
+
+[project.scripts]
+dftsolve = "nanoworks.dftsolve:main"
+mdsolve = "nanoworks.mdsolve:main"
+mlsolve = "nanoworks.mlsolve:main"

@@ -1851,7 +1851,7 @@ def projected_weights(calc):
 # Version
 __version__ = "v25.10.1b1"
 
-if __name__ == "__main__":
+def main():
     parser = ArgumentParser(prog ='gpawtools.py', description=Description, formatter_class=RawFormatter)
     parser.add_argument("-i", "--input", dest = "inputfile", help="Use input file for calculation variables (also you can insert geometry)")
     parser.add_argument("-g", "--geometry",dest ="geometryfile", help="Use CIF file for geometry")
@@ -1992,3 +1992,6 @@ if __name__ == "__main__":
             print(1e-6*sum(energyresult.pkg)," CPU energy consumption in Joules", end="\n", file=f1)
             print(1e-6*sum(energyresult.dram)," DRAM energy consumption in Joules", end="\n", file=f1)
             print(2.77777778e-7*(1e-6*sum(energyresult.dram)+1e-6*sum(energyresult.pkg))," Total energy consumption in kWh", end="\n", file=f1)
+
+if __name__ == "__main__":
+    main()
